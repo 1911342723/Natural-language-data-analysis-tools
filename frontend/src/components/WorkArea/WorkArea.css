@@ -1,0 +1,27 @@
+.work-area-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.work-area-with-data {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-section {
+  flex-shrink: 0;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.chat-section {
+  flex: 1;
+  overflow: hidden;
+  background: #fff;
+}
+
+

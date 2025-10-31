@@ -1,0 +1,39 @@
+# Web框架
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12
+
+# 数据处理（使用最新版本，有预编译包）
+pandas>=2.2.0
+numpy>=1.26.0
+openpyxl>=3.1.0  # Excel支持
+
+# Jupyter内核
+jupyter-client>=8.6.0
+ipykernel>=6.29.0
+nbformat>=5.9.0
+
+# AI模型调用
+openai>=1.50.0
+anthropic>=0.39.0
+
+# 数据库
+sqlalchemy>=2.0.0
+aiosqlite>=0.20.0
+
+# 图表生成
+matplotlib>=3.9.0
+seaborn>=0.13.0
+
+# 工具库
+python-dotenv>=1.0.0
+pydantic>=2.9.0
+pydantic-settings>=2.6.0
+
+# 文件处理
+aiofiles>=24.0.0
+
+# 安全（可选）
+# python-jose[cryptography]>=3.3.0
+# passlib[bcrypt]>=1.7.0
+

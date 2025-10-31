@@ -1,0 +1,20 @@
+.table-result-container {
+  padding: 16px;
+}
+
+.table-actions {
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.result-table .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.result-table .ant-table-tbody > tr:hover > td {
+  background: #e6f7ff;
+}
+
+

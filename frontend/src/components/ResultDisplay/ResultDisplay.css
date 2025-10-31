@@ -1,0 +1,16 @@
+.result-display-card {
+  margin-top: 16px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.result-tabs .ant-tabs-nav {
+  margin-bottom: 16px;
+}
+
+.result-tabs .ant-tabs-tab {
+  font-weight: 500;
+}
+
+

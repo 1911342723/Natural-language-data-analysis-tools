@@ -1,0 +1,331 @@
+/* ==================== 字段选择器容器 ==================== */
+.field-selector-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  animation: slideInLeft 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ==================== 标题区域 ==================== */
+.selector-header {
+  padding: 20px;
+  background: linear-gradient(to bottom, #fafafa, #fff);
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.selector-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 8px;
+}
+
+.selector-title-icon {
+  font-size: 20px;
+  color: #1677ff;
+}
+
+.selector-description {
+  font-size: 13px;
+  color: #8c8c8c;
+  line-height: 1.5;
+}
+
+/* ==================== 操作区域 ==================== */
+.selector-actions {
+  padding: 16px 20px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-buttons button {
+  flex: 1;
+  transition: all 0.3s;
+  font-size: 13px;
+}
+
+.action-buttons button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.select-all-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: #fff;
+}
+
+.select-all-btn:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #6a3d8e 100%);
+}
+
+.clear-btn {
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  color: #595959;
+}
+
+.clear-btn:hover {
+  border-color: #ff4d4f;
+  color: #ff4d4f;
+  background: #fff1f0;
+}
+
+/* 选中计数 */
+.selected-count {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #e6f7ff;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #0958d9;
+  text-align: center;
+  font-weight: 500;
+}
+
+.selected-count .count-number {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1677ff;
+  margin: 0 4px;
+}
+
+/* ==================== 字段列表 ==================== */
+.fields-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 20px 20px;
+}
+
+.fields-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.fields-list::-webkit-scrollbar-track {
+  background: #fafafa;
+}
+
+.fields-list::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 3px;
+}
+
+.fields-list::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* 字段项 */
+.field-item {
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeInUp 0.4s ease;
+  animation-fill-mode: backwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 为每个字段项添加延迟 */
+.field-item:nth-child(1) { animation-delay: 0.05s; }
+.field-item:nth-child(2) { animation-delay: 0.1s; }
+.field-item:nth-child(3) { animation-delay: 0.15s; }
+.field-item:nth-child(4) { animation-delay: 0.2s; }
+.field-item:nth-child(5) { animation-delay: 0.25s; }
+.field-item:nth-child(n+6) { animation-delay: 0.3s; }
+
+.field-item:hover {
+  border-color: #1677ff;
+  background: #f5f9ff;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.1);
+}
+
+.field-item.selected {
+  background: linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%);
+  border-color: #1677ff;
+  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.15);
+}
+
+/* 字段内容 */
+.field-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.field-checkbox {
+  flex-shrink: 0;
+}
+
+.field-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.field-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #262626;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-item.selected .field-name {
+  color: #1677ff;
+}
+
+.field-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.field-type-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  border: none;
+}
+
+.field-nullable {
+  font-size: 11px;
+  color: #8c8c8c;
+  background: #f5f5f5;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* ==================== 统计信息 ==================== */
+.field-stats {
+  margin-top: 8px;
+  padding: 8px;
+  background: #fafafa;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #595959;
+}
+
+.field-stats-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.field-stats-item:last-child {
+  margin-bottom: 0;
+}
+
+.field-stats-label {
+  color: #8c8c8c;
+}
+
+.field-stats-value {
+  font-weight: 500;
+  color: #262626;
+}
+
+/* ==================== 空状态 ==================== */
+.empty-fields {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #8c8c8c;
+}
+
+.empty-fields-icon {
+  font-size: 64px;
+  color: #d9d9d9;
+  margin-bottom: 16px;
+}
+
+.empty-fields-text {
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ==================== 响应式适配 ==================== */
+@media (max-width: 768px) {
+  .selector-header {
+    padding: 16px;
+  }
+
+  .selector-title {
+    font-size: 15px;
+  }
+
+  .selector-actions {
+    padding: 12px 16px;
+  }
+
+  .fields-list {
+    padding: 12px 16px 20px;
+  }
+
+  .field-item {
+    padding: 10px;
+  }
+
+  .field-name {
+    font-size: 13px;
+  }
+}
+
+/* ==================== Ant Design 组件定制 ==================== */
+.field-item .ant-checkbox-wrapper {
+  margin: 0;
+}
+
+.field-item .ant-checkbox-checked .ant-checkbox-inner {
+  background-color: #1677ff;
+  border-color: #1677ff;
+}
+
+.field-item:hover .ant-checkbox-inner {
+  border-color: #1677ff;
+}
+
+.ant-tag {
+  margin: 0;
+}

@@ -1,0 +1,281 @@
+/* ==================== 结果格式化组件 ==================== */
+.result-formatter {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #2e2e2e;
+}
+
+.result-formatter.plain {
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+/* ==================== 章节 ==================== */
+.result-section {
+  margin-bottom: 16px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  transition: all 0.3s;
+  animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.result-section:hover {
+  border-color: #d9d9d9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* 章节标题 */
+.section-header {
+  padding: 12px 16px;
+  background: linear-gradient(to right, #fafafa, #fff);
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: all 0.3s;
+  user-select: none;
+}
+
+.section-header:hover {
+  background: linear-gradient(to right, #f0f0f0, #fafafa);
+}
+
+.section-header:active {
+  background: #f0f0f0;
+}
+
+.section-title {
+  font-size: 15px;
+  color: #262626;
+  font-weight: 600;
+}
+
+/* 章节内容 */
+.section-content {
+  padding: 16px;
+  animation: expandDown 0.3s ease;
+  background: #fff;
+}
+
+@keyframes expandDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
+}
+
+/* ==================== 键值对 ==================== */
+.result-kv-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px dashed #f0f0f0;
+  transition: all 0.2s;
+}
+
+.result-kv-item:last-child {
+  border-bottom: none;
+}
+
+.result-kv-item:hover {
+  background: #fafafa;
+  padding-left: 8px;
+  padding-right: 8px;
+  margin-left: -8px;
+  margin-right: -8px;
+  border-radius: 4px;
+}
+
+.result-key {
+  color: #1677ff;
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: 120px;
+}
+
+.result-value {
+  color: #262626;
+  flex: 1;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+}
+
+/* ==================== 列表项 ==================== */
+.result-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+  margin-left: 8px;
+  transition: all 0.2s;
+}
+
+.result-list-item:hover {
+  transform: translateX(4px);
+}
+
+.list-bullet {
+  color: #1677ff;
+  font-weight: bold;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.result-list-item.numbered {
+  position: relative;
+  padding-left: 8px;
+}
+
+.list-number {
+  position: absolute;
+  left: -20px;
+  top: 8px;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* ==================== 普通文本 ==================== */
+.result-text {
+  margin: 8px 0;
+  padding: 8px 12px;
+  background: #fafafa;
+  border-left: 3px solid #e5e5e5;
+  border-radius: 4px;
+  color: #262626;
+  line-height: 1.8;
+  transition: all 0.2s;
+}
+
+.result-text:hover {
+  background: #f5f5f5;
+  border-left-color: #1677ff;
+  transform: translateX(2px);
+}
+
+/* 纯文本内容区 */
+.result-plain-content {
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+/* ==================== 数据表格样式优化 ==================== */
+.result-section table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+}
+
+.result-section th,
+.result-section td {
+  padding: 10px 12px;
+  border: 1px solid #f0f0f0;
+  text-align: left;
+}
+
+.result-section th {
+  background: linear-gradient(to bottom, #fafafa, #f5f5f5);
+  font-weight: 600;
+  color: #262626;
+  white-space: nowrap;
+}
+
+.result-section td {
+  background: #fff;
+  color: #595959;
+}
+
+.result-section tr:hover td {
+  background: #fafafa;
+}
+
+/* ==================== 数字高亮 ==================== */
+.result-value:has(*),
+.result-text:has(*) {
+  /* 为包含数字的内容添加特殊样式 */
+}
+
+/* 匹配数字 */
+.result-value strong,
+.result-key strong {
+  color: #f5222d;
+  font-weight: 600;
+  font-size: 1.05em;
+}
+
+/* ==================== 响应式适配 ==================== */
+@media (max-width: 768px) {
+  .section-header {
+    padding: 10px 12px;
+  }
+
+  .section-content {
+    padding: 12px;
+  }
+
+  .result-key {
+    min-width: 80px;
+    font-size: 13px;
+  }
+
+  .result-value {
+    font-size: 12px;
+  }
+
+  .result-list-item {
+    padding: 6px 0;
+  }
+
+  .list-number {
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+    left: -16px;
+  }
+}
+
+/* ==================== 打印样式 ==================== */
+@media print {
+  .result-section {
+    page-break-inside: avoid;
+    border: 1px solid #000;
+  }
+
+  .section-header {
+    background: #f0f0f0 !important;
+  }
+
+  .section-content {
+    padding: 12px;
+  }
+}
+

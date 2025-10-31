@@ -1,0 +1,44 @@
+.chart-result-container {
+  padding: 16px;
+}
+
+.chart-title {
+  margin-bottom: 16px;
+  text-align: center;
+  color: #262626;
+}
+
+.chart-actions {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.chart-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+}
+
+.chart-image {
+  max-width: 100%;
+  height: auto;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  border-radius: 4px;
+}
+
+.chart-image:hover {
+  transform: scale(1.02);
+}
+
+.chart-preview-modal .ant-modal-body {
+  padding: 20px;
+  background: #fafafa;
+}
+
+

@@ -1,0 +1,702 @@
+/* ==================== 对话列表容器（全屏布局）==================== */
+.conversation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: 40px;
+  width: 100%;
+}
+
+.empty-conversation {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+  color: #8c8c8c;
+}
+
+.empty-conversation .ant-empty-description {
+  color: #8c8c8c;
+}
+
+/* ==================== 消息项（全屏对话框布局）==================== */
+.conversation-item {
+  display: flex;
+  padding: 20px;
+  animation: messageSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  animation-fill-mode: forwards;
+  width: 100%;
+}
+
+/* 用户消息：右对齐 */
+.conversation-item.user-message {
+  justify-content: flex-end;
+  background: transparent;
+}
+
+.conversation-item.user-message .message-avatar {
+  order: 2;
+  margin-left: 12px;
+  margin-right: 0;
+}
+
+.conversation-item.user-message .message-content {
+  order: 1;
+  max-width: 60%;
+  background: #1677ff;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border-bottom-right-radius: 4px;
+}
+
+.conversation-item.user-message .message-body {
+  color: #fff;
+}
+
+.conversation-item.user-message .message-sender,
+.conversation-item.user-message .message-time {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* AI消息：左对齐 */
+.conversation-item.agent-message {
+  justify-content: flex-start;
+  background: transparent;
+}
+
+.conversation-item.agent-message .message-avatar {
+  order: 1;
+  margin-right: 12px;
+  margin-left: 0;
+}
+
+.conversation-item.agent-message .message-content {
+  order: 2;
+  max-width: 85%;
+  background: #f5f5f5;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border-bottom-left-radius: 4px;
+}
+
+/* 响应式padding */
+@media (min-width: 768px) {
+  .conversation-item {
+    padding: 24px 32px;
+  }
+  .conversation-item.user-message .message-content {
+    max-width: 50%;
+  }
+  .conversation-item.agent-message .message-content {
+    max-width: 75%;
+  }
+}
+
+@media (min-width: 1200px) {
+  .conversation-item {
+    padding: 28px 48px;
+  }
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==================== 头像区域 ==================== */
+.message-avatar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==================== 消息内容区域 ==================== */
+.message-content {
+  min-width: 0;
+}
+
+.message-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.message-sender {
+  font-weight: 600;
+  font-size: 14px;
+  color: #262626;
+}
+
+.message-time {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+/* ==================== 消息主体 ==================== */
+.message-body {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #2e2e2e;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.message-body p {
+  margin: 0 0 12px 0;
+}
+
+.message-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* 行内代码 */
+.message-body code {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #d73a49;
+}
+
+/* ==================== Agent 执行步骤 ==================== */
+.agent-steps-container {
+  margin-top: 16px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  overflow: hidden;
+}
+
+.steps-header {
+  padding: 12px 16px;
+  background: #fafafa;
+  border-bottom: 1px solid #e5e5e5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.steps-header:hover {
+  background: #f0f0f0;
+}
+
+.steps-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #262626;
+}
+
+.steps-header-icon {
+  transition: transform 0.3s ease;
+}
+
+.steps-header-icon.collapsed {
+  transform: rotate(-90deg);
+}
+
+.steps-content {
+  max-height: 600px;
+  overflow-y: auto;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.steps-content.collapsed {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+/* 单个步骤 */
+.step-item {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.step-item:last-child {
+  border-bottom: none;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.step-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.step-status-icon {
+  font-size: 16px;
+}
+
+.step-description {
+  font-size: 13px;
+  color: #8c8c8c;
+  margin-bottom: 8px;
+}
+
+/* 代码块 */
+.step-code {
+  margin-top: 12px;
+  background: #1e1e1e;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #2d2d2d;
+  border-bottom: 1px solid #404040;
+}
+
+.code-language {
+  font-size: 12px;
+  color: #d4d4d4;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.code-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.code-content {
+  padding: 12px;
+  overflow-x: auto;
+  max-height: 400px;
+}
+
+.code-content pre {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #d4d4d4;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+/* 执行输出 */
+.step-output {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f7f7f7;
+  border-radius: 6px;
+  border-left: 3px solid #52c41a;
+  font-size: 13px;
+  line-height: 1.6;
+  font-family: 'Consolas', 'Monaco', monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.step-error {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fff2f0;
+  border-radius: 6px;
+  border-left: 3px solid #ff4d4f;
+  font-size: 13px;
+  line-height: 1.6;
+  font-family: 'Consolas', 'Monaco', monospace;
+  color: #cf1322;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* ==================== 分析结果 ==================== */
+.analysis-result {
+  margin-top: 16px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  overflow: hidden;
+}
+
+.result-header {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-weight: 500;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-content {
+  padding: 16px;
+}
+
+/* 文本结果 */
+.result-text {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #2e2e2e;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* 图表结果 */
+.result-charts {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chart-item {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.chart-item img {
+  width: 100%;
+  display: block;
+}
+
+.chart-actions {
+  padding: 8px 12px;
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* HTML 表格 */
+.result-table {
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.result-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.result-table th,
+.result-table td {
+  padding: 8px 12px;
+  border: 1px solid #f0f0f0;
+  text-align: left;
+}
+
+.result-table th {
+  background: #fafafa;
+  font-weight: 500;
+}
+
+/* ==================== AI 总结 ==================== */
+.ai-summary {
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  border-radius: 8px;
+  border: 1px solid #ffe4cc;
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #d46b08;
+}
+
+.summary-content {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #2e2e2e;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* ==================== 滚动条样式 ==================== */
+.steps-content::-webkit-scrollbar,
+.step-output::-webkit-scrollbar,
+.step-error::-webkit-scrollbar,
+.code-content::-webkit-scrollbar,
+.result-table::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.steps-content::-webkit-scrollbar-track,
+.step-output::-webkit-scrollbar-track,
+.step-error::-webkit-scrollbar-track,
+.code-content::-webkit-scrollbar-track,
+.result-table::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.steps-content::-webkit-scrollbar-thumb,
+.step-output::-webkit-scrollbar-thumb,
+.step-error::-webkit-scrollbar-thumb,
+.code-content::-webkit-scrollbar-thumb,
+.result-table::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 3px;
+}
+
+.steps-content::-webkit-scrollbar-thumb:hover,
+.step-output::-webkit-scrollbar-thumb:hover,
+.step-error::-webkit-scrollbar-thumb:hover,
+.code-content::-webkit-scrollbar-thumb:hover,
+.result-table::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* ==================== 响应式适配 ==================== */
+@media (max-width: 768px) {
+  .conversation-item {
+    padding: 16px 0;
+  }
+
+  .conversation-item.agent-message {
+    margin-left: -12px;
+    margin-right: -12px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .message-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    margin-right: 12px;
+  }
+
+  .message-body {
+    font-size: 14px;
+  }
+}
+
+/* ==================== Agent 思考中样式 ==================== */
+.agent-thinking .message-content {
+  background: #f0f5ff;
+  border: 1px dashed #1890ff;
+  animation: thinkingPulse 2s ease-in-out infinite;
+}
+
+@keyframes thinkingPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(24, 144, 255, 0);
+  }
+}
+
+.agent-thinking-content {
+  margin-top: 12px;
+}
+
+.agent-thinking-content .ant-collapse {
+  background: transparent;
+}
+
+.agent-thinking-content .ant-collapse-item {
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: #fff;
+}
+
+.agent-thinking-content .ant-collapse-header {
+  padding: 12px 16px !important;
+}
+
+.agent-thinking-content .ant-collapse-content {
+  background: #fafafa;
+}
+
+/* ==================== Markdown 内容样式 ==================== */
+.markdown-content {
+  color: #262626;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  margin-top: 1.5em;
+  margin-bottom: 0.8em;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.markdown-content h1 {
+  font-size: 1.8em;
+  border-bottom: 2px solid #e8e8e8;
+  padding-bottom: 0.3em;
+}
+
+.markdown-content h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 0.3em;
+}
+
+.markdown-content h3 {
+  font-size: 1.3em;
+}
+
+.markdown-content p {
+  margin: 1em 0;
+  line-height: 1.8;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 1em 0;
+  padding-left: 2em;
+}
+
+.markdown-content li {
+  margin: 0.5em 0;
+  line-height: 1.6;
+}
+
+.markdown-content code {
+  background: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #d73a49;
+}
+
+.markdown-content pre {
+  background: #f6f8fa;
+  padding: 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.markdown-content pre code {
+  background: transparent;
+  padding: 0;
+  color: #24292e;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid #1890ff;
+  padding-left: 16px;
+  margin: 1em 0;
+  color: #595959;
+  background: #f0f5ff;
+  padding: 12px 16px;
+  border-radius: 4px;
+}
+
+.markdown-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+
+.markdown-content table th,
+.markdown-content table td {
+  border: 1px solid #d9d9d9;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown-content table th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.markdown-content a {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+.markdown-content hr {
+  border: none;
+  border-top: 1px solid #e8e8e8;
+  margin: 2em 0;
+}
+
+.markdown-content strong {
+  font-weight: 600;
+  color: #000;
+}
+
+.markdown-content em {
+  font-style: italic;
+  color: #595959;
+}
+
+/* ==================== 图表响应式 ==================== */
+.conversation-item img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Card 响应式 */
+.ant-card {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.ant-card-body {
+  padding: 16px;
+}
+
+@media (min-width: 768px) {
+  .ant-card-body {
+    padding: 20px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .ant-card-body {
+    padding: 24px;
+  }
+}

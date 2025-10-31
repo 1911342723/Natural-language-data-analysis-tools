@@ -1,0 +1,60 @@
+.agent-execution-container {
+  padding: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+  background: #fafafa;
+}
+
+.execution-card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #1677ff;
+}
+
+.execution-steps {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+}
+
+.execution-details {
+  background: #fff;
+  border-radius: 8px;
+}
+
+.code-section {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  border: 1px solid #e8e8e8;
+}
+
+.output-section {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  border: 1px solid #e8e8e8;
+}
+
+.output-content {
+  margin: 0;
+  padding: 12px;
+  background: #262626;
+  color: #52c41a;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.result-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+
