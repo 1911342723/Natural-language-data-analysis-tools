@@ -57,7 +57,7 @@ function FileUpload() {
         setUploadProgress(progress)
       })
 
-      console.log('✅ 上传成功，响应数据:', response)
+      console.log('上传成功，响应数据:', response)
       
       setUploadedFile(file)
       setFileData(response.data)

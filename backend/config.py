@@ -47,6 +47,12 @@ class Settings(BaseSettings):
         alias="AI_PROVIDER"
     )
     
+    # Agent模式配置
+    agent_mode: Literal["classic", "smart"] = Field(
+        default="smart",  # 默认使用智能模式
+        alias="AGENT_MODE"
+    )
+    
     # 代码执行安全
     enable_code_sandbox: bool = Field(default=False, alias="ENABLE_CODE_SANDBOX")
     docker_image: str = Field(default="python:3.11-slim", alias="DOCKER_IMAGE")

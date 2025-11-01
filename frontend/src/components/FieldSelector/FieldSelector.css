@@ -21,8 +21,44 @@
 /* ==================== 标题区域 ==================== */
 .selector-header {
   padding: 20px;
-  background: linear-gradient(to bottom, #fafafa, #fff);
-  border-bottom: 2px solid #f0f0f0;
+  background: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+/* 搜索框样式 */
+.field-search-input {
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #fafafa;
+}
+
+.field-search-input:hover {
+  border-color: #bfbfbf;
+  background: #ffffff;
+}
+
+.field-search-input:focus,
+.field-search-input-focused {
+  border-color: #595959 !important;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05) !important;
+  background: #ffffff !important;
+}
+
+.field-search-input .ant-input {
+  background: transparent;
+  font-size: 13px;
+}
+
+.field-search-input .ant-input::placeholder {
+  color: #bfbfbf;
 }
 
 .selector-title {
@@ -134,12 +170,42 @@
   background: #bfbfbf;
 }
 
+/* 字段列表 */
+.field-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+}
+
+.field-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.field-list::-webkit-scrollbar-track {
+  background: #fafafa;
+}
+
+.field-list::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 3px;
+}
+
+.field-list::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* 空状态 */
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+}
+
 /* 字段项 */
 .field-item {
   padding: 12px;
   margin-bottom: 8px;
-  background: #fff;
-  border: 1px solid #e5e5e5;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -167,16 +233,16 @@
 .field-item:nth-child(n+6) { animation-delay: 0.3s; }
 
 .field-item:hover {
-  border-color: #1677ff;
-  background: #f5f9ff;
+  border-color: #8c8c8c;
+  background: #fafafa;
   transform: translateX(4px);
-  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .field-item.selected {
-  background: linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%);
-  border-color: #1677ff;
-  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.15);
+  background: #fafafa;
+  border-color: #262626;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 字段内容 */
@@ -206,7 +272,8 @@
 }
 
 .field-item.selected .field-name {
-  color: #1677ff;
+  color: #262626;
+  font-weight: 600;
 }
 
 .field-meta {
@@ -318,12 +385,12 @@
 }
 
 .field-item .ant-checkbox-checked .ant-checkbox-inner {
-  background-color: #1677ff;
-  border-color: #1677ff;
+  background-color: #262626;
+  border-color: #262626;
 }
 
 .field-item:hover .ant-checkbox-inner {
-  border-color: #1677ff;
+  border-color: #595959;
 }
 
 .ant-tag {

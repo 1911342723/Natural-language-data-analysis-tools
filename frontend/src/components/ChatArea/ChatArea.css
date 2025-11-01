@@ -3,7 +3,8 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: #ffffff;
+  position: relative;
 }
 
 /* ==================== 对话历史区域 ==================== */
@@ -11,9 +12,53 @@
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  background: #fff;
+  background: #ffffff;
   scroll-behavior: smooth;
   max-width: 100%;
+  min-height: 200px;
+}
+
+/* 可拖拽分隔条 */
+.resize-handle {
+  height: 6px;
+  background: linear-gradient(to bottom, transparent, #e0e0e0 50%, transparent);
+  cursor: ns-resize;
+  position: relative;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.resize-handle:hover {
+  background: linear-gradient(to bottom, transparent, #595959 50%, transparent);
+  height: 8px;
+}
+
+.resize-handle::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 4px;
+  background: #d9d9d9;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.resize-handle:hover::before {
+  background: #595959;
+  width: 60px;
+}
+
+.resize-handle.dragging {
+  background: linear-gradient(to bottom, transparent, #595959 50%, transparent);
+  height: 8px;
+}
+
+.resize-handle.dragging::before {
+  background: #595959;
+  width: 60px;
 }
 
 /* 响应式布局 */
@@ -73,8 +118,12 @@
 .input-area {
   flex-shrink: 0;
   padding: 16px 20px 20px;
-  background: #fff;
+  background: #ffffff;
   border-top: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .input-header {
@@ -82,6 +131,50 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
+}
+
+/* 在输入header中的模式选择器 */
+.input-header .ant-segmented {
+  background: #ffffff;
+  border: 1px solid #d9d9d9;
+}
+
+.input-header .ant-segmented-item {
+  min-width: 60px;
+  padding: 4px 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.input-header .ant-segmented-item-selected {
+  background: #262626 !important;
+  color: #ffffff !important;
+}
+
+/* 确保选中项内所有内容都是白色（使用强力选择器） */
+.input-header .ant-segmented-item-selected * {
+  color: #ffffff !important;
+}
+
+.input-header .ant-segmented-item-selected .ant-segmented-item-label {
+  color: #ffffff !important;
+}
+
+.input-header .ant-segmented-item-selected .ant-segmented-item-label span {
+  color: #ffffff !important;
+}
+
+.input-header .ant-segmented-item-selected .ant-segmented-item-label .anticon {
+  color: #ffffff !important;
+}
+
+.input-header .ant-segmented-item-selected .ant-segmented-item-label .ant-space-item {
+  color: #ffffff !important;
+}
+
+.input-header .ant-segmented-thumb {
+  background: #262626;
 }
 
 .input-header-left {
@@ -133,16 +226,27 @@
 
 /* 输入框容器 */
 .input-wrapper {
-  background: #fff;
-  border: 1px solid #d9d9d9;
+  background: #ffffff;
+  border: 1.5px solid #e0e0e0;
   border-radius: 12px;
   padding: 12px 16px;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.input-wrapper:hover {
+  border-color: #bfbfbf;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .input-wrapper:focus-within {
-  border-color: #1677ff;
-  box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.1);
+  border-color: #595959;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+  background: #ffffff;
 }
 
 .chat-input {
@@ -160,6 +264,7 @@
 
 .chat-input::placeholder {
   color: #bfbfbf;
+  font-weight: 400;
 }
 
 /* 输入操作区 */
@@ -200,15 +305,15 @@
 }
 
 .submit-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #262626;
   border: none;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.3s;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5568d3 0%, #6a3d8e 100%);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  background: #434343;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   transform: translateY(-1px);
 }
 

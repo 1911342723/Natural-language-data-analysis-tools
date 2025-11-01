@@ -209,7 +209,7 @@ class AnalysisAgent:
             
             # 使用流式接收 AI 响应
             response_chunks = []
-            step.output = "🔄 AI 正在思考..."
+            step.output = "正在思考..."
             
             print(f"\n🤖 [AI 流式生成开始]")
             chunk_count = 0
@@ -232,7 +232,7 @@ class AnalysisAgent:
                         preview = current_response[:500] + "\n\n... (继续生成中，已生成 " + str(len(current_response)) + " 字符)"
                     else:
                         preview = current_response
-                    step.output = f"🔄 AI 正在生成代码...\n\n{preview}"
+                    step.output = f"正在生成代码...\n\n{preview}"
                     last_update_length = len(current_response)
                     
                     # 主动让出控制权，让 SSE 轮询器有机会检测到变化
@@ -567,11 +567,21 @@ class AnalysisAgent:
     
     def _build_response(self) -> Dict[str, Any]:
         """构建响应"""
+        # 提取总结到外层
+        summary = None
+        result = self.final_result
+        
+        if self.final_result and 'summary' in self.final_result:
+            summary = self.final_result['summary']
+            # 创建一个新的 result，不包含 summary
+            result = {k: v for k, v in self.final_result.items() if k != 'summary'}
+        
         return {
             "status": self.status,
             "data": {
                 "steps": [step.to_dict() for step in self.steps],
-                "result": self.final_result,
+                "result": result,
+                "summary": summary,  # 总结放在外层
                 "error": self.error_message
             }
         }

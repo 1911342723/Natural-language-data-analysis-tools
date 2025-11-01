@@ -8,9 +8,28 @@ import './WorkArea.css'
 function WorkArea() {
   const { fileData, fileGroup, uploadMode } = useAppStore()
   const [showPreview, setShowPreview] = useState(true)
+  const [isClosing, setIsClosing] = useState(false)
 
   // 判断是否有数据（单文件或多文件）
   const hasData = uploadMode === 'multiple' ? fileGroup : fileData
+
+  // 处理关闭预览（带动画）
+  const handleClosePreview = () => {
+    setIsClosing(true)
+    setTimeout(() => {
+      setShowPreview(false)
+      setIsClosing(false)
+    }, 300) // 等待动画完成
+  }
+
+  // 处理切换预览
+  const handleTogglePreview = () => {
+    if (showPreview) {
+      handleClosePreview()
+    } else {
+      setShowPreview(true)
+    }
+  }
 
   return (
     <div className="work-area-container">
@@ -22,8 +41,8 @@ function WorkArea() {
         <div className="work-area-with-data">
           {/* 数据预览区（可折叠） */}
           {showPreview && (
-            <div className="preview-section">
-              <DataPreview onClose={() => setShowPreview(false)} />
+            <div className={`preview-section ${isClosing ? 'closing' : ''}`}>
+              <DataPreview onClose={handleClosePreview} />
             </div>
           )}
           
@@ -31,7 +50,7 @@ function WorkArea() {
           <div className="chat-section">
             <ChatArea 
               showPreview={showPreview}
-              onTogglePreview={() => setShowPreview(!showPreview)} 
+              onTogglePreview={handleTogglePreview} 
             />
           </div>
         </div>

@@ -6,14 +6,17 @@ import {
   Empty, 
   message,
   Tooltip,
-  Tag 
+  Tag,
+  Segmented 
 } from 'antd'
 import { 
   SendOutlined, 
   EyeOutlined,
   EyeInvisibleOutlined,
   RocketOutlined,
-  StopOutlined 
+  StopOutlined,
+  ThunderboltOutlined,
+  BulbOutlined
 } from '@ant-design/icons'
 import useAppStore from '@/store/useAppStore'
 import { submitAnalysisStream, createSession, createMultiSession } from '@/services/api'
@@ -40,11 +43,15 @@ function ChatArea({ showPreview, onTogglePreview }) {
     fileGroup,
     selectedTables,
     currentSheetName,
+    agentMode,
+    setAgentMode,
   } = useAppStore()
 
   const [userInput, setUserInput] = useState('')
   const [inputLoading, setInputLoading] = useState(false)
   const [isNearBottom, setIsNearBottom] = useState(true)  // 用户是否在底部附近
+  const [inputAreaHeight, setInputAreaHeight] = useState(300)  // 输入区域高度
+  const [isDragging, setIsDragging] = useState(false)  // 是否正在拖拽
   const chatEndRef = useRef(null)
   const conversationAreaRef = useRef(null)  // 对话区域容器
   const cancelStreamRef = useRef(null)  // 用于取消流式请求
@@ -166,6 +173,7 @@ function ChatArea({ showPreview, onTogglePreview }) {
         currentSessionId,
         currentInput,
         uploadMode === 'multiple' ? [] : selectedColumns,  // 多文件模式不需要选择字段
+        agentMode,  // Agent 模式
         // onStep: 每当有新步骤时调用
         (step, stepIndex) => {
           console.log('🔥 [ChatArea] onStep 回调触发:', {
@@ -267,6 +275,28 @@ function ChatArea({ showPreview, onTogglePreview }) {
     message.info('已停止执行')
   }
 
+  // 处理拖拽开始
+  const handleDragStart = (e) => {
+    setIsDragging(true)
+    const startY = e.clientY
+    const startHeight = inputAreaHeight
+
+    const handleDrag = (e) => {
+      const deltaY = startY - e.clientY
+      const newHeight = Math.max(200, Math.min(800, startHeight + deltaY))
+      setInputAreaHeight(newHeight)
+    }
+
+    const handleDragEnd = () => {
+      setIsDragging(false)
+      document.removeEventListener('mousemove', handleDrag)
+      document.removeEventListener('mouseup', handleDragEnd)
+    }
+
+    document.addEventListener('mousemove', handleDrag)
+    document.addEventListener('mouseup', handleDragEnd)
+  }
+
   // 示例需求（根据模式不同）
   const exampleRequests = uploadMode === 'multiple' ? [
     '对比这几个表格的数据质量（缺失值、重复值）',
@@ -288,17 +318,23 @@ function ChatArea({ showPreview, onTogglePreview }) {
         <div ref={chatEndRef} />
       </div>
 
+      {/* 可拖拽分隔条 */}
+      <div 
+        className={`resize-handle ${isDragging ? 'dragging' : ''}`}
+        onMouseDown={handleDragStart}
+      />
+
       {/* 输入区域 */}
-      <div className="input-area">
-        {/* 顶部信息栏 */}
+      <div className="input-area" style={{ height: `${inputAreaHeight}px`, minHeight: '200px', maxHeight: '800px' }}>
+        {/* 顶部信息栏 + 模式切换 */}
         <div className="input-header">
           <Space>
             {uploadMode === 'multiple' ? (
-              <Tag color="green" icon={<RocketOutlined />}>
+              <Tag color="default" style={{ border: '1px solid #d9d9d9' }}>
                 已选择 {selectedTables.length} 个表格
               </Tag>
             ) : (
-              <Tag color="blue" icon={<RocketOutlined />}>
+              <Tag color="default" style={{ border: '1px solid #d9d9d9' }}>
                 已选择 {selectedColumns.length} 个字段
               </Tag>
             )}
@@ -307,29 +343,44 @@ function ChatArea({ showPreview, onTogglePreview }) {
               size="small"
               icon={showPreview ? <EyeInvisibleOutlined /> : <EyeOutlined />}
               onClick={onTogglePreview}
+              style={{ color: '#595959' }}
             >
               {showPreview ? '关闭数据' : '查看数据'}
             </Button>
           </Space>
+          
+          {/* Agent 模式选择器（移到右侧） */}
+          <Segmented
+            value={agentMode}
+            onChange={setAgentMode}
+            disabled={agentExecuting}
+            size="small"
+            options={[
+              {
+                label: (
+                  <Tooltip title="按固定步骤执行：生成代码 → 执行 → 提取结果 → 生成总结">
+                    <Space size={4}>
+                      <ThunderboltOutlined style={{ fontSize: 12 }} />
+                      <span style={{ fontSize: 13 }}>经典</span>
+                    </Space>
+                  </Tooltip>
+                ),
+                value: 'classic',
+              },
+              {
+                label: (
+                  <Tooltip title="像人类分析师一样思考：规划 → 探索 → 迭代分析 → 自主决策何时停止">
+                    <Space size={4}>
+                      <BulbOutlined style={{ fontSize: 12 }} />
+                      <span style={{ fontSize: 13 }}>智能</span>
+                    </Space>
+                  </Tooltip>
+                ),
+                value: 'smart',
+              },
+            ]}
+          />
         </div>
-
-        {/* 示例需求 */}
-        {!agentExecuting && (
-          <div className="example-requests">
-            <span className="example-label">💡 试试这些：</span>
-            <Space wrap size={[8, 8]}>
-              {exampleRequests.map((req, idx) => (
-                <Tag
-                  key={idx}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => setUserInput(req)}
-                >
-                  {req}
-                </Tag>
-              ))}
-            </Space>
-          </div>
-        )}
 
         {/* 输入框 */}
         <div className="input-wrapper">

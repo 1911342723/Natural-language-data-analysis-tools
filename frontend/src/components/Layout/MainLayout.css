@@ -30,7 +30,7 @@
 }
 
 .header-left:hover {
-  background: rgba(102, 126, 234, 0.05);
+  background: rgba(0, 0, 0, 0.02);
   transform: translateX(-2px);
 }
 
@@ -49,22 +49,11 @@
   }
 }
 
-.logo-icon {
-  font-size: 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
 .app-title {
   margin: 0;
   font-size: 20px;
   font-weight: 600;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #262626;
   letter-spacing: 0.5px;
 }
 
@@ -203,10 +192,6 @@
 
   .app-title {
     font-size: 16px;
-  }
-
-  .logo-icon {
-    font-size: 24px;
   }
 
   .field-sidebar {

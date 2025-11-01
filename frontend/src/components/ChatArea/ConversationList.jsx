@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { Empty, Avatar, Space, Tag, Collapse, Typography, Alert, Card, Button } from 'antd'
+import { Empty, Avatar, Space, Tag, Collapse, Typography, Alert, Card, Button, Dropdown, message, Input, Modal } from 'antd'
+import html2pdf from 'html2pdf.js'
+import JSZip from 'jszip'
+import { saveAs } from 'file-saver'
 import { 
   UserOutlined, 
   RobotOutlined, 
@@ -10,6 +13,17 @@ import {
   BugOutlined,
   DownloadOutlined,
   LoadingOutlined,
+  BarChartOutlined,
+  FileTextOutlined,
+  TableOutlined,
+  BulbOutlined,
+  ClockCircleOutlined,
+  FileMarkdownOutlined,
+  FilePdfOutlined,
+  FileWordOutlined,
+  CopyOutlined,
+  EditOutlined,
+  CheckOutlined,
 } from '@ant-design/icons'
 import useAppStore from '@/store/useAppStore'
 import ReactMarkdown from 'react-markdown'
@@ -29,6 +43,9 @@ function ConversationList({ agentExecuting = false }) {
   const agentSteps = useAppStore((state) => state.agentSteps)
   const [, forceUpdate] = useState(0)
   const [activeStepKeys, setActiveStepKeys] = useState([])  // 控制步骤展开/收缩
+  const [executingCode, setExecutingCode] = useState({})  // 正在执行的代码状态
+  const [showResultCode, setShowResultCode] = useState({})  // 显示结果代码：{ convId: true/false }
+  const [editingResultCode, setEditingResultCode] = useState({})  // 编辑结果代码：{ convId: code }
   
   // 监听 agentSteps 变化，强制重新渲染（不再处理滚动，由 ChatArea 处理）
   useEffect(() => {
@@ -78,6 +95,301 @@ function ConversationList({ agentExecuting = false }) {
       document.body.removeChild(link)
     } catch (error) {
       console.error('图表下载失败:', error)
+    }
+  }
+
+  // 导出分析结果为 Markdown（打包图表）
+  const exportAsMarkdown = async (conv) => {
+    try {
+      message.loading({ content: '正在打包报告和图表...', key: 'md-export', duration: 0 })
+
+      const zip = new JSZip()
+      
+      // 生成 Markdown 内容
+      let markdown = `# 数据分析报告\n\n`
+      markdown += `**生成时间**: ${dayjs(conv.timestamp).format('YYYY-MM-DD HH:mm:ss')}\n\n`
+      markdown += `---\n\n`
+
+      // 添加图表（引用图片文件）
+      if (conv.result?.charts && conv.result.charts.length > 0) {
+        markdown += `## 数据可视化\n\n`
+        conv.result.charts.forEach((chart, idx) => {
+          const chartFileName = `chart-${idx + 1}.png`
+          markdown += `![图表 ${idx + 1}](./charts/${chartFileName})\n\n`
+          
+          // 将图表添加到 ZIP 的 charts 文件夹
+          const base64Data = chart.data.replace(/^data:image\/\w+;base64,/, '')
+          zip.folder('charts').file(chartFileName, base64Data, { base64: true })
+        })
+      }
+
+      // 添加数据分析内容
+      if (conv.result?.text && conv.result.text.length > 0) {
+        markdown += `## 数据分析\n\n`
+        conv.result.text.forEach(text => {
+          markdown += `${text}\n\n`
+        })
+      }
+
+      // 添加 AI 总结
+      if (conv.summary) {
+        markdown += `## 智能洞察\n\n`
+        markdown += `${conv.summary}\n\n`
+      }
+
+      markdown += `---\n\n*此报告由 AI 数据分析系统自动生成*\n`
+
+      // 添加 Markdown 文件到 ZIP
+      zip.file('数据分析报告.md', markdown)
+
+      // 生成 ZIP 并下载
+      const content = await zip.generateAsync({ type: 'blob' })
+      saveAs(content, `数据分析报告_${dayjs().format('YYYYMMDD_HHmmss')}.zip`)
+      
+      message.success({ content: '报告导出成功！', key: 'md-export', duration: 2 })
+    } catch (error) {
+      console.error('Markdown 导出失败:', error)
+      message.error({ content: 'Markdown 导出失败，请重试', key: 'md-export', duration: 2 })
+    }
+  }
+
+  // 导出分析结果为 HTML
+  const exportAsHTML = (conv) => {
+    let html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数据分析报告</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; line-height: 1.6; color: #333; }
+    h1 { color: #1890ff; border-bottom: 3px solid #1890ff; padding-bottom: 10px; }
+    h2 { color: #52c41a; margin-top: 30px; border-left: 4px solid #52c41a; padding-left: 10px; }
+    img { max-width: 100%; height: auto; border: 1px solid #d9d9d9; border-radius: 4px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .metadata { color: #8c8c8c; font-size: 14px; margin-bottom: 30px; }
+    .content { background: #fafafa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+    th, td { border: 1px solid #d9d9d9; padding: 12px; text-align: left; }
+    th { background: #fafafa; font-weight: 600; }
+    .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #d9d9d9; color: #8c8c8c; font-size: 14px; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>数据分析报告</h1>
+  <div class="metadata">生成时间: ${dayjs(conv.timestamp).format('YYYY-MM-DD HH:mm:ss')}</div>
+  <hr>`
+
+    // 添加图表
+    if (conv.result?.charts && conv.result.charts.length > 0) {
+      html += `<h2>数据可视化</h2>`
+      conv.result.charts.forEach((chart, idx) => {
+        html += `<img src="data:image/png;base64,${chart.data}" alt="图表 ${idx + 1}" />`
+      })
+    }
+
+    // 添加数据分析内容
+    if (conv.result?.text && conv.result.text.length > 0) {
+      html += `<h2>数据分析</h2><div class="content">`
+      conv.result.text.forEach(text => {
+        // 简单的 Markdown 转 HTML（换行）
+        const htmlText = text.replace(/\n/g, '<br>')
+        html += `<p>${htmlText}</p>`
+      })
+      html += `</div>`
+    }
+
+    // 添加数据表格
+    if (conv.result?.data && conv.result.data.length > 0) {
+      html += `<h2>数据表格</h2>`
+      conv.result.data.forEach(item => {
+        html += item.content
+      })
+    }
+
+    // 添加 AI 总结
+    if (conv.summary) {
+      html += `<h2>智能洞察</h2><div class="content">`
+      // 简单的 Markdown 转 HTML
+      const htmlSummary = conv.summary
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      html += htmlSummary
+      html += `</div>`
+    }
+
+    html += `<div class="footer">此报告由 AI 数据分析系统自动生成</div>
+</body>
+</html>`
+
+    // 创建下载
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `数据分析报告_${dayjs().format('YYYYMMDD_HHmmss')}.html`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  // 导出分析结果为 PDF
+  const exportAsPDF = async (conv) => {
+    try {
+      message.loading({ content: '正在生成 PDF，请稍候...', key: 'pdf-export', duration: 0 })
+
+      // 创建 HTML 内容
+      let htmlContent = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 30px; color: #333; background: white;">
+<h1 style="color: #1890ff; border-bottom: 3px solid #1890ff; padding-bottom: 10px; margin-bottom: 10px;">数据分析报告</h1>
+<p style="color: #8c8c8c; font-size: 14px; margin-bottom: 30px;">生成时间: ${dayjs(conv.timestamp).format('YYYY-MM-DD HH:mm:ss')}</p>`
+
+      // 添加图表
+      if (conv.result?.charts && conv.result.charts.length > 0) {
+        htmlContent += `<h2 style="color: #52c41a; margin-top: 30px; border-left: 4px solid #52c41a; padding-left: 10px; margin-bottom: 15px;">数据可视化</h2>`
+        conv.result.charts.forEach((chart, idx) => {
+          htmlContent += `<div style="margin: 20px 0; page-break-inside: avoid;"><img src="data:image/png;base64,${chart.data}" style="max-width: 700px; width: 100%; height: auto; border: 1px solid #d9d9d9;" /></div>`
+        })
+      }
+
+      // 添加数据分析内容
+      if (conv.result?.text && conv.result.text.length > 0) {
+        htmlContent += `<h2 style="color: #52c41a; margin-top: 30px; border-left: 4px solid #52c41a; padding-left: 10px; margin-bottom: 15px;">数据分析</h2>`
+        htmlContent += `<div style="background: #fafafa; padding: 20px; border-radius: 4px; margin: 20px 0; line-height: 1.6;">`
+        conv.result.text.forEach(text => {
+          const htmlText = text.replace(/\n/g, '<br>')
+          htmlContent += `<p style="margin: 10px 0;">${htmlText}</p>`
+        })
+        htmlContent += `</div>`
+      }
+
+      // 添加 AI 总结
+      if (conv.summary) {
+        htmlContent += `<h2 style="color: #52c41a; margin-top: 30px; border-left: 4px solid #52c41a; padding-left: 10px; margin-bottom: 15px;">智能洞察</h2>`
+        htmlContent += `<div style="background: #f6ffed; padding: 20px; border-radius: 4px; margin: 20px 0; line-height: 1.6;">`
+        const htmlSummary = conv.summary
+          .replace(/\n/g, '<br>')
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        htmlContent += htmlSummary
+        htmlContent += `</div>`
+      }
+
+      htmlContent += `<div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #d9d9d9; color: #8c8c8c; font-size: 12px; text-align: center;">此报告由 AI 数据分析系统自动生成</div></div>`
+
+      // 创建临时 div
+      const tempDiv = document.createElement('div')
+      tempDiv.innerHTML = htmlContent
+      tempDiv.style.position = 'fixed'
+      tempDiv.style.top = '0'
+      tempDiv.style.left = '0'
+      tempDiv.style.width = '210mm'  // A4 宽度
+      tempDiv.style.background = 'white'
+      tempDiv.style.zIndex = '-1000'
+      tempDiv.style.opacity = '0'
+      document.body.appendChild(tempDiv)
+
+      // 等待图片加载
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // 配置 PDF 选项
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `数据分析报告_${dayjs().format('YYYYMMDD_HHmmss')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true,
+          logging: false,
+          letterRendering: true,
+          allowTaint: true
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      }
+
+      // 生成 PDF
+      await html2pdf().set(opt).from(tempDiv).save()
+
+      // 清理
+      document.body.removeChild(tempDiv)
+      message.success({ content: 'PDF 导出成功！', key: 'pdf-export', duration: 2 })
+    } catch (error) {
+      console.error('PDF 导出失败:', error)
+      message.error({ content: 'PDF 导出失败，请重试', key: 'pdf-export', duration: 2 })
+    }
+  }
+
+  // 复制代码
+  const copyCode = (code) => {
+    navigator.clipboard.writeText(code).then(() => {
+      message.success('代码已复制到剪贴板')
+    }).catch(() => {
+      message.error('复制失败，请重试')
+    })
+  }
+
+  // 获取生成图表的代码（从 steps 中找到执行代码的步骤）
+  const getChartGenerationCode = (conv) => {
+    if (!conv.steps || conv.steps.length === 0) return null
+    
+    // 找到包含代码的步骤（通常是"执行代码"或"生成代码"步骤）
+    const codeStep = conv.steps.find(step => 
+      step.code && (step.title?.includes('代码') || step.title?.includes('执行'))
+    )
+    
+    return codeStep?.code || null
+  }
+
+  // 执行结果中的代码（重新生成图表）
+  const executeResultCode = async (convId, code) => {
+    if (!sessionId) {
+      message.error('会话未初始化')
+      return
+    }
+
+    try {
+      setExecutingCode({ ...executingCode, [`result-${convId}`]: true })
+      message.loading({ content: '正在重新生成图表...', key: `execute-result-${convId}`, duration: 0 })
+
+      const response = await fetch('http://localhost:8000/api/jupyter/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, code })
+      })
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // 更新对话中的图表
+        const updatedConvs = conversations.map(c => {
+          if (c.id === convId) {
+            return {
+              ...c,
+              result: {
+                ...c.result,
+                charts: result.result?.charts || [],
+                text: result.result?.text || c.result.text
+              }
+            }
+          }
+          return c
+        })
+        
+        useAppStore.setState({ conversations: updatedConvs })
+        
+        message.success({ content: '图表重新生成成功！', key: `execute-result-${convId}`, duration: 2 })
+        
+        // 退出编辑模式
+        const newEditingResultCode = { ...editingResultCode }
+        delete newEditingResultCode[convId]
+        setEditingResultCode(newEditingResultCode)
+      } else {
+        message.error({ content: `执行失败: ${result.error}`, key: `execute-result-${convId}`, duration: 3 })
+      }
+    } catch (error) {
+      console.error('执行代码失败:', error)
+      message.error({ content: '执行失败，请检查网络连接', key: `execute-result-${convId}`, duration: 3 })
+    } finally {
+      setExecutingCode({ ...executingCode, [`result-${convId}`]: false })
     }
   }
 
@@ -199,7 +511,7 @@ function ConversationList({ agentExecuting = false }) {
                   {step.result?.data && step.result.data.length > 0 && (
                     <div style={{ marginBottom: 12 }}>
                       <Text strong style={{ display: 'block', marginBottom: 8 }}>
-                        📊 生成的图表：
+                        <BarChartOutlined /> 生成的图表
                       </Text>
                       {step.result.data.map((item, dataIdx) => {
                         // Jupyter 原始格式：item.data 包含 'image/png', 'text/html' 等
@@ -299,15 +611,154 @@ function ConversationList({ agentExecuting = false }) {
         {hasResult && (
           <Card 
             size="small" 
-            title={<Text strong>📊 分析结果</Text>}
+            title={
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text strong><BarChartOutlined /> 分析结果</Text>
+                <Dropdown
+                  menu={{
+                    items: [
+                      {
+                        key: 'pdf',
+                        label: '导出为 PDF',
+                        icon: <FilePdfOutlined />,
+                        onClick: () => exportAsPDF(conv)
+                      },
+                      {
+                        key: 'html',
+                        label: '导出为 HTML',
+                        icon: <FileWordOutlined />,
+                        onClick: () => exportAsHTML(conv)
+                      },
+                      {
+                        key: 'markdown',
+                        label: '导出为 Markdown',
+                        icon: <FileMarkdownOutlined />,
+                        onClick: () => exportAsMarkdown(conv)
+                      }
+                    ]
+                  }}
+                  placement="bottomRight"
+                >
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<DownloadOutlined />}
+                  >
+                    导出报告
+                  </Button>
+                </Dropdown>
+              </div>
+            }
             style={{ marginBottom: 12 }}
           >
             {/* 1. 图表（最先显示）*/}
             {conv.result.charts && conv.result.charts.length > 0 && (
               <div style={{ marginBottom: 16 }}>
-                <Text strong style={{ display: 'block', marginBottom: 12, fontSize: 16 }}>
-                  📊 数据可视化
-                </Text>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <Text strong style={{ fontSize: 16 }}>
+                    <BarChartOutlined /> 数据可视化
+                  </Text>
+                  <Space>
+                    {getChartGenerationCode(conv) && (
+                      <Button
+                        size="small"
+                        icon={<CodeOutlined />}
+                        onClick={() => setShowResultCode({ ...showResultCode, [conv.id]: !showResultCode[conv.id] })}
+                      >
+                        {showResultCode[conv.id] ? '隐藏代码' : '查看代码'}
+                      </Button>
+                    )}
+                    {conv.result.charts.map((chart, idx) => (
+                      <Button
+                        key={idx}
+                        type="primary"
+                        size="small"
+                        icon={<DownloadOutlined />}
+                        onClick={() => downloadChart(chart.data, `chart-${idx + 1}.png`)}
+                      >
+                        下载图表 {conv.result.charts.length > 1 ? idx + 1 : ''}
+                      </Button>
+                    ))}
+                  </Space>
+                </div>
+                
+                {/* 代码编辑区域 */}
+                {showResultCode[conv.id] && getChartGenerationCode(conv) && (
+                  <div style={{ marginBottom: 16, padding: 12, background: '#fafafa', border: '1px solid #d9d9d9', borderRadius: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <Text strong>
+                        <CodeOutlined /> 图表生成代码
+                      </Text>
+                      <Space>
+                        <Button
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() => copyCode(editingResultCode[conv.id] || getChartGenerationCode(conv))}
+                        >
+                          复制
+                        </Button>
+                        {!editingResultCode[conv.id] ? (
+                          <Button
+                            size="small"
+                            icon={<EditOutlined />}
+                            onClick={() => setEditingResultCode({ ...editingResultCode, [conv.id]: getChartGenerationCode(conv) })}
+                          >
+                            编辑
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              size="small"
+                              type="primary"
+                              icon={<PlayCircleOutlined />}
+                              loading={executingCode[`result-${conv.id}`]}
+                              onClick={() => executeResultCode(conv.id, editingResultCode[conv.id])}
+                            >
+                              重新生成
+                            </Button>
+                            <Button
+                              size="small"
+                              onClick={() => {
+                                const newEditingResultCode = { ...editingResultCode }
+                                delete newEditingResultCode[conv.id]
+                                setEditingResultCode(newEditingResultCode)
+                              }}
+                            >
+                              取消
+                            </Button>
+                          </>
+                        )}
+                      </Space>
+                    </div>
+                    {editingResultCode[conv.id] ? (
+                      <Input.TextArea
+                        value={editingResultCode[conv.id]}
+                        onChange={(e) => setEditingResultCode({ ...editingResultCode, [conv.id]: e.target.value })}
+                        autoSize={{ minRows: 10, maxRows: 30 }}
+                        style={{ 
+                          fontFamily: 'Monaco, Consolas, "Courier New", monospace',
+                          fontSize: 13,
+                          background: 'white'
+                        }}
+                      />
+                    ) : (
+                      <pre style={{ 
+                        margin: 0, 
+                        padding: 12,
+                        background: 'white',
+                        border: '1px solid #e8e8e8',
+                        borderRadius: 4,
+                        overflow: 'auto',
+                        fontSize: 13,
+                        lineHeight: 1.6,
+                        fontFamily: 'Monaco, Consolas, "Courier New", monospace'
+                      }}>
+                        {getChartGenerationCode(conv)}
+                      </pre>
+                    )}
+                  </div>
+                )}
+                
                 {conv.result.charts.map((chart, idx) => (
                   <div key={idx} style={{ marginBottom: 16, position: 'relative' }}>
                     <img 
@@ -320,15 +771,6 @@ function ConversationList({ agentExecuting = false }) {
                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                       }}
                     />
-                    <Button
-                      type="primary"
-                      size="small"
-                      icon={<DownloadOutlined />}
-                      onClick={() => downloadChart(chart.data, `chart-${idx + 1}.png`)}
-                      style={{ marginTop: 8 }}
-                    >
-                      下载图表
-                    </Button>
                   </div>
                 ))}
               </div>
@@ -338,7 +780,7 @@ function ConversationList({ agentExecuting = false }) {
             {conv.result.text && conv.result.text.length > 0 && (
               <div style={{ marginBottom: 16 }}>
                 <Text strong style={{ display: 'block', marginBottom: 12, fontSize: 16 }}>
-                  📋 数据分析
+                  <FileTextOutlined /> 数据分析
                 </Text>
                 <div style={{ 
                   background: '#fafafa', 
@@ -362,7 +804,7 @@ function ConversationList({ agentExecuting = false }) {
             {/* HTML 表格 */}
             {conv.result.data && conv.result.data.length > 0 && (
               <div>
-                <Text strong style={{ display: 'block', marginBottom: 8 }}>📋 数据表格：</Text>
+                <Text strong style={{ display: 'block', marginBottom: 8 }}><TableOutlined /> 数据表格</Text>
                 {conv.result.data.map((item, idx) => (
                   <div 
                     key={idx}
@@ -381,7 +823,7 @@ function ConversationList({ agentExecuting = false }) {
             size="small" 
             title={
               <Text strong style={{ fontSize: 16 }}>
-                💡 智能洞察
+                <BulbOutlined /> 智能洞察
               </Text>
             }
             style={{ 
@@ -485,15 +927,15 @@ function ConversationList({ agentExecuting = false }) {
             </div>
 
             <div className="agent-thinking-content">
-              {/* 调试信息 */}
+              {/* 调试信息
               {agentSteps.length === 0 && (
-                <div style={{ padding: '20px', background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 4, marginBottom: 12 }}>
-                  <Text style={{ fontSize: 14 }}>
-                    ⏳ 等待后端响应... (agentSteps: {agentSteps.length} 个)
-                  </Text>
-                </div>
+                // <div style={{ padding: '20px', background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 4, marginBottom: 12 }}>
+                //   <Text style={{ fontSize: 14 }}>
+                //     <ClockCircleOutlined spin /> 等待后端响应... (agentSteps: {agentSteps.length} 个)
+                //   </Text>
+                // </div>
               )}
-              
+               */}
               <Collapse
                 activeKey={activeStepKeys}
                 onChange={(keys) => {
@@ -504,7 +946,7 @@ function ConversationList({ agentExecuting = false }) {
                 style={{ background: 'transparent' }}
               >
                 {agentSteps.map((step, idx) => {
-                  console.log(`🔍 [渲染步骤 ${idx}]:`, {
+                  console.log(`[渲染步骤 ${idx}]:`, {
                     title: step.title,
                     status: step.status,
                     hasOutput: !!step.output,
@@ -555,7 +997,7 @@ function ConversationList({ agentExecuting = false }) {
                     {step.code && (
                       <div style={{ marginBottom: 12 }}>
                         <Text strong style={{ display: 'block', marginBottom: 4 }}>
-                          <CodeOutlined /> 生成的代码：
+                          <CodeOutlined /> 生成的代码
                         </Text>
                         <CodeExecutor
                           code={step.code}

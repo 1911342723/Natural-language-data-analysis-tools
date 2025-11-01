@@ -150,20 +150,40 @@
 .ant-pagination-item {
   border-radius: 6px;
   transition: all 0.3s;
+  background: transparent;
+  border-color: #d9d9d9;
 }
 
 .ant-pagination-item:hover {
-  border-color: #1677ff;
-  transform: scale(1.1);
+  border-color: #8c8c8c;
+  background: #fafafa;
 }
 
 .ant-pagination-item-active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: transparent;
+  background: #262626;
+  border-color: #262626;
 }
 
 .ant-pagination-item-active a {
-  color: #fff;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.ant-pagination-item-active:hover {
+  background: #434343;
+  border-color: #434343;
+}
+
+/* 分页按钮 */
+.ant-pagination-prev:hover .ant-pagination-item-link,
+.ant-pagination-next:hover .ant-pagination-item-link {
+  color: #262626;
+  border-color: #8c8c8c;
+}
+
+.ant-pagination-jump-prev:hover .ant-pagination-item-link,
+.ant-pagination-jump-next:hover .ant-pagination-item-link {
+  color: #262626;
 }
 
 /* ==================== 收起按钮 ==================== */

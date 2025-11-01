@@ -167,10 +167,13 @@ const useAppStore = create((set, get) => ({
   agentExecuting: false, // Agent 是否正在执行
   currentTaskId: null, // 当前任务ID
   agentSteps: [], // Agent 执行步骤记录
+  agentMode: 'smart', // Agent 模式: 'classic' | 'smart'
   
   setAgentExecuting: (executing) => set({ agentExecuting: executing }),
   
   setCurrentTaskId: (taskId) => set({ currentTaskId: taskId }),
+  
+  setAgentMode: (mode) => set({ agentMode: mode }),
   
   addAgentStep: (step) => {
     const { agentSteps } = get()
@@ -230,6 +233,7 @@ const useAppStore = create((set, get) => ({
     agentExecuting: false,
     currentTaskId: null,
     agentSteps: [],
+    agentMode: 'smart',
     // 对话历史
     conversations: [],
     // 结果

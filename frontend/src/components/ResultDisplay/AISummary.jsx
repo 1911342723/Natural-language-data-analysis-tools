@@ -2,7 +2,8 @@ import { Card, Typography, Space, Button } from 'antd'
 import { 
   BulbOutlined, 
   CopyOutlined,
-  CheckOutlined 
+  CheckOutlined,
+  RobotOutlined 
 } from '@ant-design/icons'
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
@@ -42,7 +43,7 @@ function AISummary({ summary }) {
 
       <div className="summary-footer">
         <Space>
-          <span className="footer-icon">🤖</span>
+          <RobotOutlined className="footer-icon" />
           <span className="footer-text">由 AI 自动生成</span>
         </Space>
       </div>

@@ -299,15 +299,7 @@ plt.rcParams['axes.unicode_minus'] = False
 _data_json = '''{data_json}'''
 df = pd.read_json(_data_json, orient='records')
 
-print("=" * 60)
-print("✅ Jupyter Kernel 初始化成功")
-print("=" * 60)
-print(f"数据形状: {{df.shape[0]}} 行 x {{df.shape[1]}} 列")
-print(f"字段列表: {{', '.join(df.columns)}}")
-print(f"内存占用: {{df.memory_usage(deep=True).sum() / 1024**2:.2f}} MB")
-print("=" * 60)
-
-# 静默执行（不输出到结果）
+# 初始化完成（不输出任何内容到 stdout）
 None
 """
         
@@ -390,9 +382,8 @@ import json
 plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
-print("=" * 60)
-print("✅ Jupyter Kernel 初始化成功（多表格模式）")
-print("=" * 60)
+# 环境初始化完成
+None
 """
         
         print(f"\n🔧 [Multi-Session {session_id[:8]}] 初始化环境...")
@@ -418,14 +409,7 @@ print("=" * 60)
 _data_json_{idx} = '''{data_json}'''
 {alias} = pd.read_json(_data_json_{idx}, orient='records')
 
-print(f"✅ 表格 '{alias}' 已加载")
-print(f"   文件: {file_name}")
-print(f"   工作表: {sheet_name}")
-print(f"   数据形状: {{{alias}.shape[0]}} 行 x {{{alias}.shape[1]}} 列")
-print(f"   字段列表: {{', '.join({alias}.columns.astype(str))}}")
-print("=" * 60)
-
-# 返回 None 避免输出到结果
+# 表格加载完成（不输出到 stdout）
 None
 """
             

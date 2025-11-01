@@ -3,7 +3,6 @@ import {
   MenuFoldOutlined, 
   MenuUnfoldOutlined,
   HistoryOutlined,
-  FileTextOutlined,
   ExclamationCircleOutlined 
 } from '@ant-design/icons'
 import useAppStore from '@/store/useAppStore'
@@ -54,7 +53,6 @@ function MainLayout() {
       {/* 顶部导航栏 */}
       <Header className="main-header">
         <div className="header-left" onClick={handleBackToHome} style={{ cursor: 'pointer' }}>
-          <FileTextOutlined className="logo-icon" />
           <h1 className="app-title">自然语言数据分析工具</h1>
         </div>
         

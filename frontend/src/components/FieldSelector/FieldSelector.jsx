@@ -5,16 +5,14 @@ import {
   Input, 
   Tag, 
   Space, 
-  Divider, 
-  Card,
-  Table,
+  Divider,
   Typography 
 } from 'antd'
 import { 
   SearchOutlined, 
   CheckSquareOutlined, 
   BorderOutlined,
-  InfoCircleOutlined 
+  DatabaseOutlined 
 } from '@ant-design/icons'
 import useAppStore from '@/store/useAppStore'
 import './FieldSelector.css'
@@ -36,7 +34,6 @@ function FieldSelector() {
   // 获取当前工作表的数据
   const currentSheet = getCurrentSheet()
   const columns = currentSheet?.columns || []
-  const dataPreview = currentSheet?.preview || []
   
   // 调试日志
   console.log('🎯 FieldSelector - 当前工作表:', currentSheetName)
@@ -70,54 +67,43 @@ function FieldSelector() {
     return typeMap[type?.toLowerCase()] || 'default'
   }
 
-  // 获取选中字段的数据预览
-  const previewColumns = selectedColumns.map(colName => ({
-    title: colName,
-    dataIndex: colName,
-    key: colName,
-    ellipsis: true,
-    width: 120,
-    render: (text) => (
-      <span title={text} style={{ fontSize: '12px' }}>
-        {text === null || text === undefined || text === '' ? '-' : String(text)}
-      </span>
-    ),
-  }))
-
-  const previewData = dataPreview.slice(0, 5).map((row, index) => ({
-    ...row,
-    key: index,
-  }))
-
   return (
     <div className="field-selector-container">
       {/* 顶部操作栏 */}
       <div className="selector-header">
-        <Space direction="vertical" size="small" style={{ width: '100%' }}>
+        <Space direction="vertical" size="medium" style={{ width: '100%' }}>
           <div className="header-title">
-            <InfoCircleOutlined style={{ color: '#1677ff' }} />
-            <Text strong>选择分析字段</Text>
+            <DatabaseOutlined style={{ fontSize: 16, color: '#262626' }} />
+            <Text strong style={{ fontSize: 14, color: '#262626' }}>选择分析字段</Text>
           </div>
           
           <Input
             placeholder="搜索字段名称..."
-            prefix={<SearchOutlined />}
+            prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             allowClear
-            size="small"
+            className="field-search-input"
           />
 
           <Space size="small" style={{ width: '100%', justifyContent: 'space-between' }}>
             <Button
-              type="link"
+              type="text"
               size="small"
               icon={isAllSelected ? <BorderOutlined /> : <CheckSquareOutlined />}
               onClick={isAllSelected ? clearSelectedColumns : selectAllColumns}
+              style={{ color: '#595959', fontSize: 13 }}
             >
               {isAllSelected ? '取消全选' : '全选'}
             </Button>
-            <Tag color="blue">{selectedColumns.length} / {columns.length}</Tag>
+            <Tag style={{ 
+              background: '#fafafa', 
+              border: '1px solid #d9d9d9', 
+              color: '#262626',
+              fontWeight: 500
+            }}>
+              {selectedColumns.length} / {columns.length}
+            </Tag>
           </Space>
         </Space>
       </div>
@@ -159,33 +145,6 @@ function FieldSelector() {
           ))
         )}
       </div>
-
-      {/* 已选字段预览 */}
-      {selectedColumns.length > 0 && (
-        <>
-          <Divider style={{ margin: '12px 0' }} />
-          <div className="field-preview-section">
-            <Card
-              size="small"
-              title={<Text style={{ fontSize: '13px' }}>已选字段数据预览</Text>}
-              bordered={false}
-              className="preview-card"
-            >
-              <Table
-                columns={previewColumns}
-                dataSource={previewData}
-                scroll={{ x: 'max-content' }}
-                pagination={false}
-                size="small"
-                bordered
-              />
-              <div className="preview-hint">
-                显示前 5 行数据
-              </div>
-            </Card>
-          </div>
-        </>
-      )}
     </div>
   )
 }

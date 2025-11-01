@@ -11,7 +11,9 @@ import json
 import logging
 
 from core.agent import AnalysisAgent
+from core.smart_agent import SmartAnalysisAgent
 from core.file_handler import file_handler
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +28,7 @@ class AnalyzeRequest(BaseModel):
     session_id: str
     user_request: str
     selected_columns: List[str]
+    agent_mode: str = "smart"  # 默认智能模式
 
 
 async def run_agent_task(
@@ -33,19 +36,29 @@ async def run_agent_task(
     session_id: str,
     user_request: str,
     selected_columns: List[str],
-    data_schema: Dict
+    data_schema: Dict,
+    agent_mode: str = "smart"
 ):
     """后台运行 Agent 任务"""
     try:
-        logger.info(f"开始执行 Agent 任务: {task_id}")
+        logger.info(f"开始执行 Agent 任务: {task_id}, 模式: {agent_mode}")
         
-        # 创建 Agent
-        agent = AnalysisAgent(
-            session_id=session_id,
-            user_request=user_request,
-            selected_columns=selected_columns,
-            data_schema=data_schema
-        )
+        # 根据用户选择或配置选择 Agent 类型
+        effective_mode = agent_mode or settings.agent_mode
+        if effective_mode == "smart":
+            agent = SmartAnalysisAgent(
+                session_id=session_id,
+                user_request=user_request,
+                selected_columns=selected_columns,
+                data_schema=data_schema
+            )
+        else:
+            agent = AnalysisAgent(
+                session_id=session_id,
+                user_request=user_request,
+                selected_columns=selected_columns,
+                data_schema=data_schema
+            )
         
         # 更新任务状态
         tasks[task_id]["agent"] = agent
@@ -154,7 +167,8 @@ async def submit_analysis(
             request.session_id,
             request.user_request,
             request.selected_columns,
-            data_schema
+            data_schema,
+            request.agent_mode  # 传递 agent_mode
         )
         
         return JSONResponse({
@@ -338,13 +352,25 @@ async def analyze_stream(request: AnalyzeRequest):
                 start_event = safe_json_dumps({'event': 'start', 'task_id': task_id})
                 yield f"data: {start_event}\n\n"
                 
-                # 创建 Agent
-                agent = AnalysisAgent(
-                    session_id=request.session_id,
-                    user_request=request.user_request,
-                    selected_columns=request.selected_columns,
-                    data_schema=data_schema
-                )
+                # 根据模式创建 Agent
+                agent_mode = request.agent_mode or "smart"
+                logger.info(f"使用 Agent 模式: {agent_mode}")
+                
+                if agent_mode == "smart":
+                    agent = SmartAnalysisAgent(
+                        session_id=request.session_id,
+                        user_request=request.user_request,
+                        selected_columns=request.selected_columns,
+                        data_schema=data_schema,
+                        tables_info=data_schema.get('tables') if data_schema.get('is_multi') else None
+                    )
+                else:
+                    agent = AnalysisAgent(
+                        session_id=request.session_id,
+                        user_request=request.user_request,
+                        selected_columns=request.selected_columns,
+                        data_schema=data_schema
+                    )
                 
                 # 监听 Agent 的步骤变化
                 last_step_count = 0

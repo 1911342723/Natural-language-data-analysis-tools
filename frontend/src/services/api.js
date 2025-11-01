@@ -123,6 +123,7 @@ export const submitAnalysisRequest = (sessionId, userRequest, selectedColumns) =
  * @param {string} sessionId - Session ID
  * @param {string} userRequest - 用户需求
  * @param {Array} selectedColumns - 选中的字段
+ * @param {string} agentMode - Agent 模式 ('classic' | 'smart')
  * @param {function} onStep - 步骤回调 (step) => void
  * @param {function} onComplete - 完成回调 (result) => void
  * @param {function} onError - 错误回调 (error) => void
@@ -132,6 +133,7 @@ export const submitAnalysisStream = (
   sessionId,
   userRequest,
   selectedColumns,
+  agentMode,
   onStep,
   onComplete,
   onError
@@ -152,6 +154,7 @@ export const submitAnalysisStream = (
           session_id: sessionId,
           user_request: userRequest,
           selected_columns: selectedColumns,
+          agent_mode: agentMode || 'smart', // 默认智能模式
         }),
         signal: controller.signal,
       })
