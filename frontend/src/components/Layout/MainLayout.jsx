@@ -1,9 +1,10 @@
-import { Layout, Button, Tooltip } from 'antd'
+import { Layout, Button, Tooltip, Modal } from 'antd'
 import { 
   MenuFoldOutlined, 
   MenuUnfoldOutlined,
   HistoryOutlined,
-  FileTextOutlined 
+  FileTextOutlined,
+  ExclamationCircleOutlined 
 } from '@ant-design/icons'
 import useAppStore from '@/store/useAppStore'
 import FieldSelector from '../FieldSelector/FieldSelector'
@@ -22,18 +23,39 @@ function MainLayout() {
     fileData,
     fileGroup,
     uploadMode,
+    resetAll,
   } = useAppStore()
 
   // 判断是否有数据（单文件或多文件）
   const hasData = uploadMode === 'multiple' ? fileGroup : fileData
 
+  // 点击标题返回首页
+  const handleBackToHome = () => {
+    // 如果有数据，显示确认对话框
+    if (hasData) {
+      Modal.confirm({
+        title: '返回首页',
+        icon: <ExclamationCircleOutlined />,
+        content: '返回首页将清空当前所有数据和分析记录，确定要继续吗？',
+        okText: '确定',
+        cancelText: '取消',
+        onOk: () => {
+          resetAll()
+        },
+      })
+    } else {
+      // 没有数据直接重置
+      resetAll()
+    }
+  }
+
   return (
     <Layout className="main-layout">
       {/* 顶部导航栏 */}
       <Header className="main-header">
-        <div className="header-left">
+        <div className="header-left" onClick={handleBackToHome} style={{ cursor: 'pointer' }}>
           <FileTextOutlined className="logo-icon" />
-          <h1 className="app-title">智能数据分析工具</h1>
+          <h1 className="app-title">自然语言数据分析工具</h1>
         </div>
         
         <div className="header-right">

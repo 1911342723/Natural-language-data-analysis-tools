@@ -363,7 +363,7 @@ async def analyze_stream(request: AnalyzeRequest):
                         # 检查是否有新步骤或步骤内容变化
                         for i, step in enumerate(current_steps):
                             step_key = f"{i}"
-                            current_output = step.get('output', '')
+                            current_output = step.get('output') or ''  # 处理 None 的情况
                             
                             # 新步骤或输出内容变化
                             if i >= last_step_count or last_step_outputs.get(step_key) != current_output:

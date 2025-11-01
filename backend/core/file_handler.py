@@ -7,6 +7,7 @@ import math
 import pandas as pd
 import numpy as np
 import logging
+from datetime import datetime, date, time
 from typing import Dict, Any, List
 from pathlib import Path
 
@@ -144,16 +145,22 @@ class FileHandler:
         
         # 递归清理所有不可序列化的值
         def clean_nan(obj):
-            """递归清理对象中的所有不可序列化的值（NaN, Timestamp等）"""
+            """递归清理对象中的所有不可序列化的值（NaN, Timestamp, datetime等）"""
             if isinstance(obj, dict):
                 return {k: clean_nan(v) for k, v in obj.items()}
             elif isinstance(obj, list):
                 return [clean_nan(item) for item in obj]
             elif isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
                 return None
-            elif pd.api.types.is_datetime64_any_dtype(type(obj)) or isinstance(obj, pd.Timestamp):
-                # 将 Pandas Timestamp 转换为 ISO 格式字符串
-                return obj.isoformat() if hasattr(obj, 'isoformat') else str(obj)
+            elif pd.isna(obj):
+                # 处理所有类型的 NaN（包括 pd.NaT）
+                return None
+            elif isinstance(obj, (pd.Timestamp, np.datetime64, datetime, date, time)):
+                # 将各种 datetime 类型转换为 ISO 格式字符串
+                try:
+                    return obj.isoformat()
+                except:
+                    return str(obj)
             elif hasattr(obj, 'item'):
                 # NumPy 类型（如 np.int64）转换为 Python 原生类型
                 return obj.item()
@@ -334,15 +341,22 @@ class FileHandler:
         
         # 清理不可序列化的值
         def clean_nan(obj):
-            """递归清理对象中的所有不可序列化的值（NaN, Timestamp等）"""
+            """递归清理对象中的所有不可序列化的值（NaN, Timestamp, datetime等）"""
             if isinstance(obj, dict):
                 return {k: clean_nan(v) for k, v in obj.items()}
             elif isinstance(obj, list):
                 return [clean_nan(item) for item in obj]
             elif isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
                 return None
-            elif pd.api.types.is_datetime64_any_dtype(type(obj)) or isinstance(obj, pd.Timestamp):
-                return obj.isoformat() if hasattr(obj, 'isoformat') else str(obj)
+            elif pd.isna(obj):
+                # 处理所有类型的 NaN（包括 pd.NaT）
+                return None
+            elif isinstance(obj, (pd.Timestamp, np.datetime64, datetime, date, time)):
+                # 将各种 datetime 类型转换为 ISO 格式字符串
+                try:
+                    return obj.isoformat()
+                except:
+                    return str(obj)
             elif hasattr(obj, 'item'):
                 return obj.item()
             else:
@@ -456,15 +470,22 @@ class FileHandler:
         
         # 清理不可序列化的值
         def clean_nan(obj):
-            """递归清理对象中的所有不可序列化的值（NaN, Timestamp等）"""
+            """递归清理对象中的所有不可序列化的值（NaN, Timestamp, datetime等）"""
             if isinstance(obj, dict):
                 return {k: clean_nan(v) for k, v in obj.items()}
             elif isinstance(obj, list):
                 return [clean_nan(item) for item in obj]
             elif isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
                 return None
-            elif pd.api.types.is_datetime64_any_dtype(type(obj)) or isinstance(obj, pd.Timestamp):
-                return obj.isoformat() if hasattr(obj, 'isoformat') else str(obj)
+            elif pd.isna(obj):
+                # 处理所有类型的 NaN（包括 pd.NaT）
+                return None
+            elif isinstance(obj, (pd.Timestamp, np.datetime64, datetime, date, time)):
+                # 将各种 datetime 类型转换为 ISO 格式字符串
+                try:
+                    return obj.isoformat()
+                except:
+                    return str(obj)
             elif hasattr(obj, 'item'):
                 return obj.item()
             else:

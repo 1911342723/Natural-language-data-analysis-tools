@@ -13,6 +13,8 @@ import {
 } from '@ant-design/icons'
 import useAppStore from '@/store/useAppStore'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 import CodeExecutor from '@/components/CodeExecutor/CodeExecutor'
 import ResultFormatter from '@/components/ResultFormatter/ResultFormatter'
 import dayjs from 'dayjs'
@@ -26,9 +28,9 @@ function ConversationList({ agentExecuting = false }) {
   const sessionId = useAppStore((state) => state.sessionId)
   const agentSteps = useAppStore((state) => state.agentSteps)
   const [, forceUpdate] = useState(0)
-  const listEndRef = useRef(null)  // 用于滚动到底部
+  const [activeStepKeys, setActiveStepKeys] = useState([])  // 控制步骤展开/收缩
   
-  // 监听 agentSteps 变化，强制重新渲染并滚动到底部
+  // 监听 agentSteps 变化，强制重新渲染（不再处理滚动，由 ChatArea 处理）
   useEffect(() => {
     console.log('🔔 [ConversationList] agentSteps 变化:', {
       agentExecuting,
@@ -43,10 +45,6 @@ function ConversationList({ agentExecuting = false }) {
     
     if (agentExecuting && agentSteps.length > 0) {
       forceUpdate(prev => prev + 1)
-      // 自动滚动到底部
-      setTimeout(() => {
-        listEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-      }, 100)
     }
   }, [agentSteps, agentExecuting])
   
@@ -91,8 +89,13 @@ function ConversationList({ agentExecuting = false }) {
     return (
       <div>
         {/* 基本消息 */}
-        <div className="message-body" style={{ marginBottom: hasSteps ? 12 : 0 }}>
-          <ReactMarkdown>{conv.content}</ReactMarkdown>
+        <div className="message-body markdown-container" style={{ marginBottom: hasSteps ? 12 : 0 }}>
+          <ReactMarkdown 
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeRaw]}
+          >
+            {conv.content}
+          </ReactMarkdown>
         </div>
 
         {/* 执行步骤 */}
@@ -163,13 +166,17 @@ function ConversationList({ agentExecuting = false }) {
                         {/* 优先显示 result.stdout，否则显示 output */}
                         {step.result?.stdout && step.result.stdout.length > 0 ? (
                           step.result.stdout.map((line, lineIdx) => (
-                            <div key={lineIdx} className="markdown-content">
-                              <ReactMarkdown>{line}</ReactMarkdown>
+                            <div key={lineIdx} className="markdown-content markdown-container">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                                {line}
+                              </ReactMarkdown>
                             </div>
                           ))
                         ) : (
-                          <div className="markdown-content">
-                            <ReactMarkdown>{step.output || ''}</ReactMarkdown>
+                          <div className="markdown-content markdown-container">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                              {step.output || ''}
+                            </ReactMarkdown>
                           </div>
                         )}
                       </div>
@@ -342,8 +349,10 @@ function ConversationList({ agentExecuting = false }) {
                   lineHeight: 1.8
                 }}>
                   {conv.result.text.map((text, idx) => (
-                    <div key={idx} className="markdown-content">
-                      <ReactMarkdown>{text}</ReactMarkdown>
+                    <div key={idx} className="markdown-content markdown-container">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                        {text}
+                      </ReactMarkdown>
                     </div>
                   ))}
                 </div>
@@ -382,8 +391,10 @@ function ConversationList({ agentExecuting = false }) {
             }}
             headStyle={{ background: '#f6ffed', borderBottom: '1px solid #b7eb8f' }}
           >
-            <div className="markdown-content" style={{ fontSize: 14, lineHeight: 1.8 }}>
-              <ReactMarkdown>{conv.summary}</ReactMarkdown>
+            <div className="markdown-content markdown-container" style={{ fontSize: 14, lineHeight: 1.8 }}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                {conv.summary}
+              </ReactMarkdown>
             </div>
           </Card>
         )}
@@ -400,7 +411,7 @@ function ConversationList({ agentExecuting = false }) {
             <div>
               <p>还没有对话记录</p>
               <p style={{ fontSize: '13px', color: '#8c8c8c' }}>
-                👇 在下方输入框描述你的数据分析需求开始吧！
+                在下方输入框描述你的数据分析需求开始吧！
               </p>
             </div>
           }
@@ -484,7 +495,11 @@ function ConversationList({ agentExecuting = false }) {
               )}
               
               <Collapse
-                activeKey={agentSteps.map((_, idx) => `step-${idx}`)}
+                activeKey={activeStepKeys}
+                onChange={(keys) => {
+                  console.log('👆 [ConversationList] 用户切换步骤面板:', keys)
+                  setActiveStepKeys(keys)
+                }}
                 ghost
                 style={{ background: 'transparent' }}
               >
@@ -498,7 +513,7 @@ function ConversationList({ agentExecuting = false }) {
                   })
                   return (
                   <Panel
-                    key={`step-${idx}-${step.output?.length || 0}-${step.code?.length || 0}`}
+                    key={`step-${idx}`}
                     header={
                       <Space>
                         {getStepIcon(step)}
@@ -566,13 +581,17 @@ function ConversationList({ agentExecuting = false }) {
                         }}>
                           {step.result?.stdout && step.result.stdout.length > 0 ? (
                             step.result.stdout.map((line, lineIdx) => (
-                              <div key={lineIdx} className="markdown-content">
-                                <ReactMarkdown>{line}</ReactMarkdown>
+                              <div key={lineIdx} className="markdown-content markdown-container">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                                  {line}
+                                </ReactMarkdown>
                               </div>
                             ))
                           ) : (
-                            <div className="markdown-content">
-                              <ReactMarkdown>{step.output || ''}</ReactMarkdown>
+                            <div className="markdown-content markdown-container">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                                {step.output || ''}
+                              </ReactMarkdown>
                             </div>
                           )}
                         </div>
@@ -625,8 +644,6 @@ function ConversationList({ agentExecuting = false }) {
         </div>
       )}
       
-      {/* 滚动锚点 */}
-      <div ref={listEndRef} style={{ height: '1px' }} />
     </div>
   )
 }

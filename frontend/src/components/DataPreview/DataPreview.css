@@ -211,3 +211,17 @@
 .selected-table:hover {
   border-color: #73d13d !important;
 }
+
+/* 字段选择标题 - 可点击展开/收起 */
+.selected-table .field-selector-title {
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.selected-table .field-selector-title:hover {
+  color: #1677ff;
+  background: rgba(22, 119, 255, 0.05);
+  padding: 4px 8px;
+  margin: -4px -8px;
+  border-radius: 4px;
+}

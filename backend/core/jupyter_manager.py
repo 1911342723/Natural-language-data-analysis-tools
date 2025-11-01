@@ -324,19 +324,10 @@ None
             await session.shutdown()
             raise Exception(f"Session 初始化失败: {error_msg}")
         
-        # 验证 df 是否成功加载
-        verify_code = "df.shape"
-        print(f"🔧 [Session {session_id[:8]}] 验证 DataFrame...")
-        verify_result = await session.execute_code(verify_code, timeout=5)
-        
-        print(f"🔧 [Session {session_id[:8]}] 验证结果: {verify_result}")
-        
-        if verify_result.get('error'):
-            print(f"❌ [Session {session_id[:8]}] DataFrame 验证失败: {verify_result['error']}")
-            await session.shutdown()
-            raise Exception("DataFrame 加载失败")
-        
-        print(f"✅ [Session {session_id[:8]}] DataFrame 已加载: {verify_result.get('result')}")
+        # Windows 上 ZMQ 存在严重 bug，快速连续执行代码会导致 Kernel 崩溃
+        # 因此跳过额外的验证步骤，直接信任初始化代码的执行结果
+        # 如果初始化代码执行成功（无 error），说明 df 已成功加载
+        print(f"✅ [Session {session_id[:8]}] DataFrame 初始化完成，Kernel 就绪")
         
         # 保存 session
         self.sessions[session_id] = session
@@ -413,6 +404,8 @@ print("=" * 60)
             await session.shutdown()
             raise Exception(f"多文件 Session 初始化失败: {error_msg}")
         
+        print(f"✅ [Multi-Session {session_id[:8]}] 环境初始化完成")
+        
         # 逐个加载表格
         for idx, table in enumerate(tables_data):
             alias = table['alias']
@@ -445,16 +438,8 @@ None
                 await session.shutdown()
                 raise Exception(f"表格 '{alias}' 加载失败: {error_msg}")
             
-            # 验证加载成功
-            verify_code = f"{alias}.shape"
-            verify_result = await session.execute_code(verify_code, timeout=5)
-            
-            if verify_result.get('error'):
-                print(f"❌ [Multi-Session {session_id[:8]}] 表格 '{alias}' 验证失败")
-                await session.shutdown()
-                raise Exception(f"表格 '{alias}' 加载失败")
-            
-            print(f"✅ [Multi-Session {session_id[:8]}] 表格 '{alias}' 验证通过")
+            # 跳过验证步骤（Windows 上 ZMQ bug），信任初始化代码的执行结果
+            print(f"✅ [Multi-Session {session_id[:8]}] 表格 '{alias}' 加载完成")
         
         # 保存 session
         self.sessions[session_id] = session

@@ -550,8 +550,15 @@
 }
 
 /* ==================== Markdown 内容样式 ==================== */
+.markdown-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
 .markdown-content {
   color: #262626;
+  min-width: 0; /* 允许子元素收缩 */
 }
 
 .markdown-content h1,
@@ -633,6 +640,18 @@
   border-collapse: collapse;
   width: 100%;
   margin: 1em 0;
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.markdown-content thead,
+.markdown-content tbody,
+.markdown-content tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
 }
 
 .markdown-content table th,
@@ -640,11 +659,36 @@
   border: 1px solid #d9d9d9;
   padding: 8px 12px;
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .markdown-content table th {
   background: #fafafa;
   font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* 表格滚动条样式 */
+.markdown-content table::-webkit-scrollbar {
+  height: 8px;
+}
+
+.markdown-content table::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.markdown-content table::-webkit-scrollbar-thumb {
+  background: #bfbfbf;
+  border-radius: 4px;
+}
+
+.markdown-content table::-webkit-scrollbar-thumb:hover {
+  background: #999;
 }
 
 .markdown-content a {

@@ -23,6 +23,19 @@
   align-items: center;
   gap: 12px;
   animation: fadeInLeft 0.6s ease;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.header-left:hover {
+  background: rgba(102, 126, 234, 0.05);
+  transform: translateX(-2px);
+}
+
+.header-left:active {
+  transform: scale(0.98);
 }
 
 @keyframes fadeInLeft {

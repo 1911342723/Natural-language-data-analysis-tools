@@ -1,21 +1,27 @@
 import { useState } from 'react'
-import { Upload, Button, message, Progress, Card, Space, Radio, Tag } from 'antd'
+import { Upload, Button, message, Progress, Card, Space, Radio, Tag, List, Typography } from 'antd'
 import { 
   InboxOutlined, 
-  FileExcelOutlined, 
-  FilePdfOutlined,
+  FileExcelOutlined,
   CheckCircleOutlined,
-  AppstoreAddOutlined
+  AppstoreAddOutlined,
+  DeleteOutlined,
+  CheckOutlined,
+  CloudUploadOutlined,
+  FileTextOutlined
 } from '@ant-design/icons'
 import { uploadFile, uploadMultipleFiles } from '@/services/api'
 import useAppStore from '@/store/useAppStore'
 import './FileUpload.css'
 
 const { Dragger } = Upload
+const { Text, Title } = Typography
 
 function FileUpload() {
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadedFiles, setUploadedFiles] = useState([])
+  const [currentBatchFiles, setCurrentBatchFiles] = useState([])
   const { 
     uploadMode, 
     setUploadMode, 
@@ -26,7 +32,6 @@ function FileUpload() {
   } = useAppStore()
 
   const handleUpload = async (file) => {
-    // 验证文件类型
     const validTypes = [
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -34,11 +39,10 @@ function FileUpload() {
     ]
     
     if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
-      message.error('只支持上传 Excel (.xlsx, .xls) 或 CSV (.csv) 文件')
+      message.error('仅支持 Excel (.xlsx, .xls) 或 CSV (.csv) 文件')
       return false
     }
 
-    // 验证文件大小（限制 100MB）
     const maxSize = 100 * 1024 * 1024
     if (file.size > maxSize) {
       message.error('文件大小不能超过 100MB')
@@ -54,24 +58,16 @@ function FileUpload() {
       })
 
       console.log('✅ 上传成功，响应数据:', response)
-      console.log('📊 工作表数量:', response.data.sheets?.length)
       
-      // 更新状态
       setUploadedFile(file)
       setFileData(response.data)
       
-      // 设置第一个工作表的字段列表
       const firstSheet = response.data.sheets?.[0]
       if (firstSheet) {
-        console.log('📋 当前工作表:', firstSheet.sheet_name)
-        console.log('🔢 字段数量:', firstSheet.columns?.length)
-        console.log('📝 字段列表:', firstSheet.columns?.map(c => c.name))
         setColumns(firstSheet.columns || [])
-      } else {
-        console.error('❌ 没有找到工作表数据')
       }
       
-      message.success('文件上传成功！')
+      message.success('文件上传成功')
     } catch (error) {
       console.error('上传失败:', error)
       message.error('文件上传失败，请重试')
@@ -80,38 +76,48 @@ function FileUpload() {
       setUploadProgress(0)
     }
 
-    return false // 阻止自动上传
+    return false
   }
 
-  // 处理多文件上传
-  const handleMultipleUpload = async ({ fileList }) => {
-    if (fileList.length === 0) {
-      message.warning('请选择至少一个文件')
+  const handleFileChange = ({ fileList }) => {
+    setCurrentBatchFiles(fileList)
+  }
+
+  const validateFile = (file) => {
+    const validTypes = [
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv',
+    ]
+    
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
+      return '格式不支持'
+    }
+
+    const maxSize = 100 * 1024 * 1024
+    if (file.size > maxSize) {
+      return '文件过大'
+    }
+
+    return null
+  }
+
+  const handleBatchUpload = async () => {
+    if (currentBatchFiles.length === 0) {
+      message.warning('请选择要上传的文件')
       return
     }
 
-    if (fileList.length > 10) {
-      message.error('最多只能同时上传10个文件')
+    if (uploadedFiles.length + currentBatchFiles.length > 10) {
+      message.error(`最多只能上传10个文件，当前已上传 ${uploadedFiles.length} 个`)
       return
     }
 
-    // 验证所有文件
-    for (const fileObj of fileList) {
+    for (const fileObj of currentBatchFiles) {
       const file = fileObj.originFileObj || fileObj
-      const validTypes = [
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'text/csv',
-      ]
-      
-      if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
-        message.error(`文件 "${file.name}" 格式不支持，只支持 Excel 和 CSV 文件`)
-        return
-      }
-
-      const maxSize = 100 * 1024 * 1024
-      if (file.size > maxSize) {
-        message.error(`文件 "${file.name}" 大小超过 100MB`)
+      const error = validateFile(file)
+      if (error) {
+        message.error(`文件 "${file.name}" ${error}`)
         return
       }
     }
@@ -120,20 +126,21 @@ function FileUpload() {
     setUploadProgress(0)
 
     try {
-      const files = fileList.map(f => f.originFileObj || f)
+      const files = currentBatchFiles.map(f => f.originFileObj || f)
       const response = await uploadMultipleFiles(files, (progress) => {
         setUploadProgress(progress)
       })
-
-      console.log('✅ 多文件上传成功，响应数据:', response)
-      console.log('📊 文件数量:', response.data.files?.length)
       
-      // 更新状态
-      setFileGroup(response.data)
+      const newFiles = response.data.files.map((file, index) => ({
+        ...file,
+        localFile: files[index]
+      }))
+      setUploadedFiles([...uploadedFiles, ...newFiles])
+      setCurrentBatchFiles([])
       
-      message.success(`成功上传 ${fileList.length} 个文件！`)
+      message.success(`成功上传 ${files.length} 个文件`)
     } catch (error) {
-      console.error('多文件上传失败:', error)
+      console.error('批次上传失败:', error)
       message.error('文件上传失败，请重试')
     } finally {
       setUploading(false)
@@ -141,120 +148,223 @@ function FileUpload() {
     }
   }
 
+  const handleRemoveFile = (fileId) => {
+    setUploadedFiles(uploadedFiles.filter(f => f.file_id !== fileId))
+    message.info('已移除文件')
+  }
+
+  const handleFinishUpload = async () => {
+    if (uploadedFiles.length === 0) {
+      message.warning('请至少上传一个文件')
+      return
+    }
+
+    try {
+      const fileGroupData = {
+        group_id: `group_${Date.now()}`,
+        files: uploadedFiles
+      }
+      
+      setFileGroup(fileGroupData)
+      message.success(`已准备 ${uploadedFiles.length} 个文件，可以开始分析`)
+    } catch (error) {
+      console.error('完成上传失败:', error)
+      message.error('操作失败，请重试')
+    }
+  }
+
+  const handleModeChange = (mode) => {
+    setUploadMode(mode)
+    setUploadedFiles([])
+    setCurrentBatchFiles([])
+  }
+
   return (
-    <div className="file-upload-container">
+    <div className="modern-file-upload-container">
+      {/* 顶部标题区 */}
+      <div className="upload-header">
+        <div className="header-content">
+          <Title level={2} className="header-title">
+            <CloudUploadOutlined className="header-icon" />
+            数据文件上传
+          </Title>
+          <Text className="header-subtitle">
+            支持 Excel 和 CSV 格式，开启智能数据分析之旅
+          </Text>
+        </div>
+      </div>
+
       {/* 模式切换 */}
-      <div style={{ marginBottom: 16, textAlign: 'center' }}>
+      <div className="mode-selector">
         <Radio.Group 
           value={uploadMode} 
-          onChange={(e) => setUploadMode(e.target.value)}
-          buttonStyle="solid"
+          onChange={(e) => handleModeChange(e.target.value)}
+          size="large"
+          className="mode-radio-group"
         >
-          <Radio.Button value="single">
-            <FileExcelOutlined /> 单文件分析
+          <Radio.Button value="single" className="mode-radio-button">
+            <FileTextOutlined className="mode-icon" />
+            <span>单文件分析</span>
           </Radio.Button>
-          <Radio.Button value="multiple">
-            <AppstoreAddOutlined /> 多文件对比
+          <Radio.Button value="multiple" className="mode-radio-button">
+            <AppstoreAddOutlined className="mode-icon" />
+            <span>多文件对比</span>
           </Radio.Button>
         </Radio.Group>
       </div>
 
-      <div className="upload-content">
-        <Card className="upload-card" bordered={false}>
-          {uploadMode === 'single' ? (
-            // 单文件上传
-            <Dragger
-              name="file"
-              multiple={false}
-              beforeUpload={handleUpload}
-              showUploadList={false}
-              disabled={uploading}
-              className="upload-dragger"
-            >
-              <p className="ant-upload-drag-icon">
-                <InboxOutlined />
-              </p>
-              <p className="ant-upload-text">
-                点击或拖拽文件到此区域上传
-              </p>
-              <p className="ant-upload-hint">
-                支持 Excel (.xlsx, .xls) 和 CSV (.csv) 格式，文件大小不超过 100MB
-              </p>
-            </Dragger>
-          ) : (
-            // 多文件上传
-            <Dragger
-              name="files"
-              multiple={true}
-              beforeUpload={() => false}
-              onChange={handleMultipleUpload}
-              disabled={uploading}
-              className="upload-dragger"
-              maxCount={10}
-            >
-              <p className="ant-upload-drag-icon">
-                <AppstoreAddOutlined style={{ fontSize: 48 }} />
-              </p>
-              <p className="ant-upload-text" style={{ marginBottom: 8 }}>
-                点击或拖拽多个文件到此区域上传
-              </p>
-              <div className="ant-upload-hint" style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <Tag color="blue" style={{ margin: 0 }}>最多10个文件</Tag>
-                <Tag color="green" style={{ margin: 0 }}>支持 Excel 和 CSV</Tag>
-                <Tag color="orange" style={{ margin: 0 }}>单个文件≤100MB</Tag>
-              </div>
-            </Dragger>
-          )}
-
-          {uploading && (
-            <div className="upload-progress-wrapper">
-              <Progress
-                percent={uploadProgress}
-                status="active"
-                strokeColor={{
-                  from: '#108ee9',
-                  to: '#87d068',
-                }}
-              />
-              <p className="progress-text">
-                {uploadMode === 'single' ? '正在上传并解析文件...' : '正在上传多个文件...'}
-              </p>
-            </div>
-          )}
-        </Card>
-
-        <div className="upload-tips">
-          <h3>💡 使用提示</h3>
-          <Space direction="vertical" size="small">
-            <div className="tip-item">
-              <FileExcelOutlined /> 支持的文件格式：Excel (.xlsx, .xls)、CSV (.csv)
-            </div>
-            {uploadMode === 'multiple' ? (
-              <>
-                <div className="tip-item">
-                  <CheckCircleOutlined /> 上传后勾选要对比分析的表格
+      {/* 上传区域 */}
+      <div className="upload-main-content">
+        <div className="upload-section">
+          <Card className="upload-card" bordered={false}>
+            {uploadMode === 'single' ? (
+              // 单文件上传
+              <Dragger
+                name="file"
+                multiple={false}
+                beforeUpload={handleUpload}
+                showUploadList={false}
+                disabled={uploading}
+                className="modern-dragger"
+              >
+                <div className="dragger-content">
+                  <CloudUploadOutlined className="upload-icon" />
+                  <Title level={4} className="upload-title">
+                    点击或拖拽文件到此处
+                  </Title>
+                  <Text className="upload-hint">
+                    支持 .xlsx, .xls, .csv 格式，单个文件最大 100MB
+                  </Text>
                 </div>
-                <div className="tip-item">
-                  <CheckCircleOutlined /> 系统自动分配变量名（df1, df2, df3...）
-                </div>
-                <div className="tip-item">
-                  <CheckCircleOutlined /> AI 生成代码进行跨表格一致性分析
-                </div>
-              </>
+              </Dragger>
             ) : (
+              // 多文件上传
               <>
-                <div className="tip-item">
-                  <CheckCircleOutlined /> 上传后可以选择需要分析的字段
-                </div>
-                <div className="tip-item">
-                  <CheckCircleOutlined /> 通过自然语言描述分析需求
-                </div>
-                <div className="tip-item">
-                  <CheckCircleOutlined /> AI 自动生成代码并执行分析
-                </div>
+                <Dragger
+                  name="files"
+                  multiple={true}
+                  beforeUpload={() => false}
+                  onChange={handleFileChange}
+                  disabled={uploading}
+                  className="modern-dragger"
+                  fileList={currentBatchFiles}
+                >
+                  <div className="dragger-content">
+                    <AppstoreAddOutlined className="upload-icon multi" />
+                    <Title level={4} className="upload-title">
+                      选择多个文件进行对比分析
+                    </Title>
+                    <Text className="upload-hint">
+                      最多支持 10 个文件，每个文件最大 100MB
+                    </Text>
+                  </div>
+                </Dragger>
+                
+                {currentBatchFiles.length > 0 && (
+                  <div className="batch-actions">
+                    <Button
+                      type="primary"
+                      size="large"
+                      onClick={handleBatchUpload}
+                      loading={uploading}
+                      disabled={uploading}
+                      icon={<CloudUploadOutlined />}
+                      className="primary-button"
+                    >
+                      上传 {currentBatchFiles.length} 个文件
+                    </Button>
+                    <Button
+                      size="large"
+                      onClick={() => setCurrentBatchFiles([])}
+                      disabled={uploading}
+                      className="secondary-button"
+                    >
+                      取消
+                    </Button>
+                  </div>
+                )}
+
+                {uploadedFiles.length > 0 && (
+                  <div className="uploaded-files-section">
+                    <Card
+                      className="uploaded-card"
+                      title={
+                        <Space>
+                          <CheckCircleOutlined className="success-icon" />
+                          <Text strong>已上传的文件 ({uploadedFiles.length}/10)</Text>
+                        </Space>
+                      }
+                      extra={
+                        <Button
+                          type="primary"
+                          icon={<CheckOutlined />}
+                          onClick={handleFinishUpload}
+                          disabled={uploading}
+                          className="finish-button"
+                        >
+                          完成上传
+                        </Button>
+                      }
+                    >
+                      <List
+                        dataSource={uploadedFiles}
+                        renderItem={(file) => (
+                          <List.Item
+                            className="file-list-item"
+                            actions={[
+                              <Button
+                                key="delete"
+                                type="text"
+                                danger
+                                size="small"
+                                icon={<DeleteOutlined />}
+                                onClick={() => handleRemoveFile(file.file_id)}
+                                disabled={uploading}
+                              >
+                                移除
+                              </Button>
+                            ]}
+                          >
+                            <List.Item.Meta
+                              avatar={
+                                <div className="file-avatar">
+                                  <FileExcelOutlined />
+                                </div>
+                              }
+                              title={<Text strong>{file.file_name}</Text>}
+                              description={
+                                <Space size={4}>
+                                  <Tag color="blue">{file.sheets?.length || 0} 个工作表</Tag>
+                                  <Tag color="green" className="file-id-tag">
+                                    {file.file_id.slice(0, 8)}
+                                  </Tag>
+                                </Space>
+                              }
+                            />
+                          </List.Item>
+                        )}
+                      />
+                    </Card>
+                  </div>
+                )}
               </>
             )}
-          </Space>
+
+            {uploading && (
+              <div className="upload-progress-section">
+                <Progress
+                  percent={uploadProgress}
+                  status="active"
+                  strokeColor="#000000"
+                  strokeWidth={12}
+                  className="modern-progress"
+                />
+                <Text className="progress-text">
+                  {uploadMode === 'single' ? '正在上传并解析文件...' : `正在上传 ${currentBatchFiles.length} 个文件...`}
+                </Text>
+              </div>
+            )}
+          </Card>
         </div>
       </div>
     </div>
@@ -262,4 +372,3 @@ function FileUpload() {
 }
 
 export default FileUpload
-

@@ -29,7 +29,10 @@ function WorkArea() {
           
           {/* 对话交互区 */}
           <div className="chat-section">
-            <ChatArea onShowPreview={() => setShowPreview(true)} />
+            <ChatArea 
+              showPreview={showPreview}
+              onTogglePreview={() => setShowPreview(!showPreview)} 
+            />
           </div>
         </div>
       )}

@@ -1,383 +1,438 @@
-/* ==================== 上传容器 ==================== */
-.file-upload-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 40px;
+/* ==================== 现代化文件上传容器 ==================== */
+.modern-file-upload-container {
+  min-height: 100vh;
+  height: 100vh;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%);
+  padding: 40px 20px;
   position: relative;
-  overflow: hidden;
-}
-
-/* 兼容旧的类名 */
-.upload-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 40px;
-  position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* 背景装饰 */
-.upload-container::before {
+.modern-file-upload-container::before {
   content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-  animation: moveBackground 20s linear infinite;
-}
-
-@keyframes moveBackground {
-  0% {
-    transform: translate(0, 0);
-  }
-  100% {
-    transform: translate(50px, 50px);
-  }
-}
-
-.upload-content {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 600px;
-  animation: floatIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes floatIn {
-  from {
-    opacity: 0;
-    transform: translateY(30px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* ==================== 标题区域 ==================== */
-.upload-header {
-  text-align: center;
-  margin-bottom: 40px;
-  color: #fff;
-}
-
-.upload-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
-  display: inline-block;
-  animation: bounce 2s ease-in-out infinite;
-}
-
-@keyframes bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.upload-title {
-  font-size: 32px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  color: #fff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.upload-subtitle {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1.6;
-}
-
-/* ==================== 上传区域 ==================== */
-.upload-area-wrapper {
-  background: #fff;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-.ant-upload-drag {
-  border: 2px dashed #d9d9d9;
-  border-radius: 12px;
-  background: #fafafa;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  padding: 40px 20px;
-}
-
-.ant-upload-drag:hover {
-  border-color: #1677ff;
-  background: #f5f9ff;
-  transform: scale(1.02);
-  box-shadow: 0 8px 24px rgba(22, 119, 255, 0.15);
-}
-
-.ant-upload-drag.ant-upload-drag-hover {
-  border-color: #1677ff;
-  background: linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%);
-}
-
-.ant-upload-drag-icon {
-  margin-bottom: 16px;
-}
-
-.ant-upload-drag-icon .anticon {
-  font-size: 72px;
-  color: #1677ff;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
-}
-
-.ant-upload-text {
-  font-size: 16px;
-  font-weight: 500;
-  color: #262626;
-  margin-bottom: 8px;
-}
-
-.ant-upload-hint {
-  font-size: 14px;
-  color: #8c8c8c;
-  line-height: 1.6;
-}
-
-/* ==================== 支持格式提示 ==================== */
-.upload-formats {
-  margin-top: 24px;
-  text-align: center;
-}
-
-.formats-title {
-  font-size: 13px;
-  color: #8c8c8c;
-  margin-bottom: 12px;
-}
-
-.formats-list {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.format-tag {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
-  border: none;
-  font-size: 12px;
-  padding: 4px 12px;
-  font-weight: 500;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-  animation: fadeInScale 0.5s ease;
-  animation-fill-mode: backwards;
-}
-
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.format-tag:nth-child(1) { animation-delay: 0.1s; }
-.format-tag:nth-child(2) { animation-delay: 0.2s; }
-.format-tag:nth-child(3) { animation-delay: 0.3s; }
-
-/* ==================== 特性列表 ==================== */
-.features-list {
-  margin-top: 32px;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.feature-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px;
-  background: #f5f5f5;
-  border-radius: 8px;
-  transition: all 0.3s;
-  animation: fadeInUp 0.6s ease;
-  animation-fill-mode: backwards;
-}
-
-.feature-item:nth-child(1) { animation-delay: 0.2s; }
-.feature-item:nth-child(2) { animation-delay: 0.3s; }
-.feature-item:nth-child(3) { animation-delay: 0.4s; }
-.feature-item:nth-child(4) { animation-delay: 0.5s; }
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.feature-item:hover {
-  background: #e6f7ff;
-  transform: translateY(-2px);
-}
-
-.feature-icon {
-  font-size: 20px;
-  color: #1677ff;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.feature-text {
-  flex: 1;
-}
-
-.feature-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #262626;
-  margin-bottom: 4px;
-}
-
-.feature-desc {
-  font-size: 12px;
-  color: #8c8c8c;
-  line-height: 1.5;
-}
-
-/* ==================== 响应式适配 ==================== */
-@media (max-width: 768px) {
-  .upload-container {
-    padding: 20px;
-  }
-
-  .upload-header {
-    margin-bottom: 32px;
-  }
-
-  .upload-icon {
-    font-size: 48px;
-  }
-
-  .upload-title {
-    font-size: 24px;
-  }
-
-  .upload-subtitle {
-    font-size: 14px;
-  }
-
-  .upload-area-wrapper {
-    padding: 24px;
-  }
-
-  .ant-upload-drag {
-    padding: 32px 16px;
-  }
-
-  .ant-upload-drag-icon .anticon {
-    font-size: 56px;
-  }
-
-  .features-list {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .feature-item {
-    padding: 10px;
-  }
-}
-
-@media (max-width: 480px) {
-  .upload-title {
-    font-size: 20px;
-  }
-
-  .upload-area-wrapper {
-    padding: 20px;
-  }
-
-  .ant-upload-drag {
-    padding: 24px 12px;
-  }
-}
-
-/* ==================== 加载状态 ==================== */
-.uploading-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.95);
+  background-image: 
+    linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+}
+
+/* ==================== 顶部标题区 ==================== */
+.upload-header {
+  max-width: 1400px;
+  margin: 0 auto 40px;
+  text-align: center;
+}
+
+.header-content {
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 16px;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.header-title {
+  color: #000000 !important;
+  font-size: 36px !important;
+  font-weight: 700 !important;
+  margin-bottom: 12px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.header-icon {
+  font-size: 40px;
+  color: #000000;
+}
+
+.header-subtitle {
+  color: #595959;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+/* ==================== 模式选择器 ==================== */
+.mode-selector {
+  max-width: 1400px;
+  margin: 0 auto 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.mode-radio-group {
+  background: #ffffff;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.mode-radio-button {
+  border-radius: 8px !important;
+  border: none !important;
+  background: transparent !important;
+  color: #595959 !important;
+  height: 48px !important;
+  padding: 0 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.mode-radio-button:hover {
+  background: #fafafa !important;
+  color: #000000 !important;
+}
+
+.mode-radio-button.ant-radio-button-wrapper-checked {
+  background: #000000 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.mode-icon {
+  font-size: 18px;
+}
+
+/* ==================== 主内容区 ==================== */
+.upload-main-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 1200px) {
+  .upload-main-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==================== 上传区域 ==================== */
+.upload-section {
+  flex: 1;
+}
+
+.upload-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.upload-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border-color: #d9d9d9;
+}
+
+.upload-card .ant-card-body {
+  padding: 40px;
+  max-height: calc(100vh - 300px);
+  overflow-y: auto;
+}
+
+/* ==================== 拖拽区域 ==================== */
+.modern-dragger {
+  border: 3px dashed #d9d9d9 !important;
+  border-radius: 20px !important;
+  background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  padding: 60px 40px !important;
+}
+
+.modern-dragger:hover,
+.modern-dragger.ant-upload-drag-hover {
+  border-color: #000000 !important;
+  background: #fafafa !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.modern-dragger .ant-upload-drag-container {
+  padding: 0;
+}
+
+.dragger-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  z-index: 10;
+  gap: 16px;
+}
+
+.upload-icon {
+  font-size: 72px;
+  color: #000000;
+}
+
+.upload-icon.multi {
+  color: #000000;
+}
+
+.upload-title {
+  color: #262626 !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+}
+
+.upload-hint {
+  color: #8c8c8c;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ==================== 进度条 ==================== */
+.upload-progress-section {
+  margin-top: 32px;
+  padding: 24px;
+  background: #fafafa;
   border-radius: 12px;
-  animation: fadeIn 0.3s ease;
+  border: 1px solid #e8e8e8;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+.modern-progress {
+  margin-bottom: 12px;
 }
 
-.uploading-spinner {
-  font-size: 48px;
-  color: #1677ff;
-  margin-bottom: 16px;
-  animation: spin 1s linear infinite;
+.modern-progress .ant-progress-text {
+  font-weight: 600;
+  color: #000000;
 }
 
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.uploading-text {
-  font-size: 16px;
-  color: #262626;
+.progress-text {
+  display: block;
+  text-align: center;
+  color: #000000;
+  font-size: 14px;
   font-weight: 500;
+}
+
+/* ==================== 批次操作按钮 ==================== */
+.batch-actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.primary-button {
+  height: 48px !important;
+  padding: 0 32px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  background: #000000 !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  transition: all 0.3s ease !important;
+}
+
+.primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+  background: #262626 !important;
+}
+
+.secondary-button {
+  height: 48px !important;
+  padding: 0 32px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  border: 2px solid #d9d9d9 !important;
+  color: #595959 !important;
+  transition: all 0.3s ease !important;
+}
+
+.secondary-button:hover {
+  border-color: #000000 !important;
+  color: #000000 !important;
+  transform: translateY(-2px);
+}
+
+/* ==================== 已上传文件列表 ==================== */
+.uploaded-files-section {
+  margin-top: 32px;
+}
+
+.uploaded-card {
+  border-radius: 16px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.uploaded-card .ant-card-head {
+  background: #fafafa;
+  border-bottom: 1px solid #e8e8e8;
+  border-radius: 16px 16px 0 0;
+}
+
+.uploaded-card .ant-card-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.success-icon {
+  color: #000000;
+  font-size: 18px;
+}
+
+.finish-button {
+  height: 36px;
+  border-radius: 8px;
+  background: #000000;
+  border: none;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.finish-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  background: #262626 !important;
+}
+
+.file-list-item {
+  padding: 16px !important;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0 !important;
+  transition: all 0.3s ease;
+}
+
+.file-list-item:hover {
+  background: #f5f7fa;
+  border-color: #e6f0ff !important;
+  transform: translateX(4px);
+}
+
+.file-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 24px;
+}
+
+.file-id-tag {
+  font-family: 'Consolas', monospace;
+  font-size: 12px;
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 768px) {
+  .modern-file-upload-container {
+    padding: 20px 12px;
+  }
+
+  .header-content {
+    padding: 24px;
+  }
+
+  .header-title {
+    font-size: 28px !important;
+  }
+
+  .header-icon {
+    font-size: 32px;
+  }
+
+  .upload-card .ant-card-body {
+    padding: 24px;
+  }
+
+  .modern-dragger {
+    padding: 40px 24px !important;
+  }
+
+  .upload-icon {
+    font-size: 56px;
+  }
+
+  .batch-actions {
+    flex-direction: column;
+  }
+
+  .primary-button,
+  .secondary-button {
+    width: 100%;
+  }
+}
+
+/* ==================== 滚动条样式 ==================== */
+.modern-file-upload-container::-webkit-scrollbar,
+.upload-card .ant-card-body::-webkit-scrollbar,
+.uploaded-card .ant-card-body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.modern-file-upload-container::-webkit-scrollbar-track,
+.upload-card .ant-card-body::-webkit-scrollbar-track,
+.uploaded-card .ant-card-body::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.modern-file-upload-container::-webkit-scrollbar-thumb,
+.upload-card .ant-card-body::-webkit-scrollbar-thumb,
+.uploaded-card .ant-card-body::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.modern-file-upload-container::-webkit-scrollbar-thumb:hover,
+.upload-card .ant-card-body::-webkit-scrollbar-thumb:hover,
+.uploaded-card .ant-card-body::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* ==================== 动画优化 ==================== */
+.modern-file-upload-container * {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==================== Ant Design 组件覆盖 ==================== */
+.modern-file-upload-container .ant-card-head-title {
+  padding: 16px 0;
+}
+
+.modern-file-upload-container .ant-progress-line {
+  margin-bottom: 0;
+}
+
+.modern-file-upload-container .ant-list-item-meta-title {
+  color: #262626;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.modern-file-upload-container .ant-list-item-meta-description {
+  color: #8c8c8c;
+}
+
+.modern-file-upload-container .ant-btn-text:hover {
+  background: rgba(255, 77, 79, 0.06);
 }

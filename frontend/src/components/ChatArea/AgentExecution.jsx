@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { 
   Card, 
   Steps, 
@@ -35,6 +35,7 @@ function AgentExecution() {
   } = useAppStore()
 
   const [currentStep, setCurrentStep] = useState(0)
+  const [activeKeys, setActiveKeys] = useState([])  // 控制展开的面板，默认收缩
 
   // 监听步骤变化，自动更新当前步骤
   useEffect(() => {
@@ -42,6 +43,17 @@ function AgentExecution() {
       setCurrentStep(agentSteps.length - 1)
     }
   }, [agentSteps.length])
+
+  // 用户手动切换面板展开/收缩
+  const handlePanelChange = (keys) => {
+    console.log('👆 [AgentExecution] 用户切换面板:', keys)
+    console.log('  当前 activeKeys:', activeKeys)
+    console.log('  新的 keys:', keys)
+    setActiveKeys(keys)
+  }
+  
+  // 使用 useMemo 缓存稳定的 key，避免频繁重新渲染导致点击失效
+  const stableActiveKeys = useMemo(() => activeKeys, [JSON.stringify(activeKeys)])
 
   // 获取步骤状态
   const getStepStatus = (step) => {
@@ -93,20 +105,39 @@ function AgentExecution() {
         {/* 详细信息 */}
         {agentSteps.length > 0 && (
           <Collapse
-            defaultActiveKey={[currentStep]}
-            activeKey={[currentStep]}
+            activeKey={stableActiveKeys}
+            onChange={handlePanelChange}
             className="execution-details"
+            style={{ pointerEvents: 'auto' }}
+            collapsible="header"
+            destroyInactivePanel={false}
           >
             {agentSteps.map((step, index) => (
               <Panel
-                key={index}
+                key={`step-${index}`}
                 header={
-                  <Space>
+                  <Space 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      console.log(`🖱️ [AgentExecution] header 被点击: 步骤 #${index}`)
+                      const newKeys = activeKeys.includes(index.toString()) 
+                        ? activeKeys.filter(k => k !== index.toString())
+                        : [...activeKeys, index.toString()]
+                      handlePanelChange(newKeys)
+                    }}
+                    style={{ cursor: 'pointer', width: '100%' }}
+                  >
                     {getStepIcon(step)}
                     <Text strong>{step.title || `步骤 ${index + 1}`}</Text>
                     <Tag color={step.status === 'success' ? 'success' : step.status === 'failed' ? 'error' : 'processing'}>
-                      {step.status}
+                      {step.status === 'success' ? '✅ 成功' : step.status === 'failed' ? '❌ 失败' : step.status === 'running' ? '⏳ 执行中' : '⏸️ 等待'}
                     </Tag>
+                    {/* 收缩时显示简短预览 */}
+                    {step.output && !activeKeys.includes(index.toString()) && step.status === 'running' && (
+                      <Text type="secondary" style={{ fontSize: '12px', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {step.output.split('\n')[0].substring(0, 50)}
+                      </Text>
+                    )}
                   </Space>
                 }
               >

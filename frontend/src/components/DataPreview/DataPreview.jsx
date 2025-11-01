@@ -8,7 +8,9 @@ import {
   FileExcelOutlined,
   InfoCircleOutlined,
   AppstoreAddOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined,
+  DownOutlined,
+  UpOutlined
 } from '@ant-design/icons'
 import useAppStore from '@/store/useAppStore'
 import './DataPreview.css'
@@ -34,7 +36,7 @@ function DataPreview({ onClose }) {
     toggleAllTableColumns,
   } = useAppStore()
   const [pageSize, setPageSize] = useState(10)
-  const [expandedTables, setExpandedTables] = useState({}) // 记录哪些表格展开了字段选择
+  const [collapsedTables, setCollapsedTables] = useState({}) // 记录哪些表格收起了字段选择（默认展开）
   
   // 获取当前工作表
   const currentSheet = getCurrentSheet()
@@ -203,7 +205,7 @@ function DataPreview({ onClose }) {
                   const tableAlias = selectedTable?.alias
                   const selectedColumns = selectedTable?.selected_columns || []
                   const tableKey = `${file.file_id}-${sheet.sheet_name}`
-                  const isFieldsExpanded = expandedTables[tableKey]
+                  const isFieldsExpanded = isSelected && !collapsedTables[tableKey] // 选中时默认展开，除非手动收起
 
                   return (
                     <Card
@@ -254,7 +256,21 @@ function DataPreview({ onClose }) {
                       {isSelected && (
                         <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                            <span style={{ fontWeight: 500 }}>
+                            <span 
+                              className="field-selector-title"
+                              style={{ 
+                                fontWeight: 500, 
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                              }}
+                              onClick={() => setCollapsedTables(prev => ({
+                                ...prev,
+                                [tableKey]: !prev[tableKey]
+                              }))}
+                            >
+                              {isFieldsExpanded ? <DownOutlined /> : <UpOutlined />}
                               <ColumnHeightOutlined /> 选择要分析的字段
                             </span>
                             <Space size="small">
@@ -269,16 +285,6 @@ function DataPreview({ onClose }) {
                                 )}
                               >
                                 {selectedColumns.length === sheet.columns.length ? '取消全选' : '全选'}
-                              </Button>
-                              <Button
-                                type="link"
-                                size="small"
-                                onClick={() => setExpandedTables(prev => ({
-                                  ...prev,
-                                  [tableKey]: !prev[tableKey]
-                                }))}
-                              >
-                                {isFieldsExpanded ? '收起' : '展开'}
                               </Button>
                             </Space>
                           </div>
@@ -451,7 +457,7 @@ function DataPreview({ onClose }) {
         />
 
         <div className="preview-hint">
-          💡 提示：这里只显示前 {dataPreview?.length} 行数据，完整数据将用于分析
+          前 {dataPreview?.length} 行数据
         </div>
       </Card>
     </div>

@@ -135,11 +135,13 @@ function FieldSelector() {
             <div
               key={col.name}
               className={`field-item ${selectedColumns.includes(col.name) ? 'selected' : ''}`}
-              onClick={() => toggleColumn(col.name)}
             >
               <Checkbox
                 checked={selectedColumns.includes(col.name)}
-                onChange={() => toggleColumn(col.name)}
+                onChange={(e) => {
+                  e.stopPropagation()  // 阻止事件冒泡
+                  toggleColumn(col.name)
+                }}
               >
                 <Space direction="vertical" size={0}>
                   <Text strong style={{ fontSize: '13px' }}>{col.name}</Text>

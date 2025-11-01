@@ -88,8 +88,16 @@ class AnalysisAgent:
                 raise asyncio.CancelledError("Agent 任务已被取消")
             
             # 步骤1：生成代码
-            step1 = await self._generate_code()
-            self.steps.append(step1)
+            # 先创建步骤对象并添加到列表，这样SSE可以实时获取到
+            step1 = AgentStep(
+                title="生成代码",
+                description="根据用户需求生成 Python 分析代码",
+                status="running"
+            )
+            self.steps.append(step1)  # ⭐ 先添加，再执行
+            
+            # 执行代码生成（会实时更新 step1 的 output）
+            await self._generate_code_impl(step1)
             
             if step1.status == "failed":
                 self.status = "failed"
@@ -103,19 +111,34 @@ class AnalysisAgent:
                     raise asyncio.CancelledError("Agent 任务已被取消")
                 
                 # 步骤2：执行代码
-                step2 = await self._execute_code(step1.code)
-                self.steps.append(step2)
+                step2 = AgentStep(
+                    title="执行代码",
+                    description="在 Jupyter Kernel 中执行生成的代码",
+                    status="running"
+                )
+                self.steps.append(step2)  # ⭐ 先添加，再执行
+                await self._execute_code_impl(step2, step1.code)
                 
                 if step2.status == "success":
                     # 执行成功！
                     # 步骤3：提取结果
-                    step3 = await self._extract_result(step2.output, step2.result)
-                    self.steps.append(step3)
+                    step3 = AgentStep(
+                        title="提取结果",
+                        description="从执行输出中提取分析结果",
+                        status="running"
+                    )
+                    self.steps.append(step3)  # ⭐ 先添加，再执行
+                    await self._extract_result_impl(step3, step2.output, step2.result)
                     
                     if step3.status == "success":
                         # 步骤4：生成总结
-                        step4 = await self._generate_summary()
-                        self.steps.append(step4)
+                        step4 = AgentStep(
+                            title="生成总结",
+                            description="使用 AI 生成分析结果总结",
+                            status="running"
+                        )
+                        self.steps.append(step4)  # ⭐ 先添加，再执行
+                        await self._generate_summary_impl(step4)
                         
                         self.status = "completed"
                         logger.info(f"Agent 执行成功 (session: {self.session_id})")
@@ -129,8 +152,13 @@ class AnalysisAgent:
                     return self._build_response()
                 
                 # 步骤3：分析错误并修复
-                step3 = await self._fix_code(step1.code, step2.error, step2.output)
-                self.steps.append(step3)
+                step3 = AgentStep(
+                    title=f"修复代码（第{self.current_retry + 1}次尝试）",
+                    description="分析错误信息并修复代码",
+                    status="running"
+                )
+                self.steps.append(step3)  # ⭐ 先添加，再执行
+                await self._fix_code_impl(step3, step1.code, step2.error, step2.output)
                 
                 if step3.status == "failed":
                     self.status = "failed"
@@ -147,13 +175,9 @@ class AnalysisAgent:
         
         return self._build_response()
     
-    async def _generate_code(self) -> AgentStep:
-        """步骤1：生成代码"""
-        step = AgentStep(
-            title="生成代码",
-            description="根据用户需求生成 Python 分析代码",
-            status="running"
-        )
+    async def _generate_code_impl(self, step: AgentStep):
+        """步骤1：生成代码（实现）"""
+        # step 已经在外部创建并添加到 self.steps，这里直接更新它
         
         try:
             logger.info("正在生成代码...")
@@ -239,16 +263,10 @@ class AnalysisAgent:
             logger.error(f"代码生成失败: {e}")
             step.status = "failed"
             step.error = {"message": str(e)}
-        
-        return step
     
-    async def _execute_code(self, code: str) -> AgentStep:
-        """步骤2：执行代码"""
-        step = AgentStep(
-            title="执行代码",
-            description="在 Jupyter Kernel 中执行生成的代码",
-            status="running"
-        )
+    async def _execute_code_impl(self, step: AgentStep, code: str):
+        """步骤2：执行代码（实现）"""
+        # step 已经在外部创建并添加到 self.steps，这里直接更新它
         
         try:
             print(f"\n🔍 [Agent] 开始执行分析代码, session_id={self.session_id[:8]}")
@@ -322,21 +340,16 @@ class AnalysisAgent:
             logger.error(f"代码执行异常: {e}")
             step.status = "failed"
             step.error = {"message": str(e)}
-        
-        return step
     
-    async def _fix_code(
+    async def _fix_code_impl(
         self,
+        step: AgentStep,
         original_code: str,
         error: Dict,
         output: str
-    ) -> AgentStep:
-        """步骤3：修复代码"""
-        step = AgentStep(
-            title=f"修复代码（第{self.current_retry + 1}次尝试）",
-            description="分析错误信息并修复代码",
-            status="running"
-        )
+    ):
+        """步骤3：修复代码（实现）"""
+        # step 已经在外部创建并添加到 self.steps，这里直接更新它
         
         try:
             logger.info(f"正在修复代码（第{self.current_retry + 1}次尝试）...")
@@ -374,20 +387,15 @@ class AnalysisAgent:
             logger.error(f"代码修复失败: {e}")
             step.status = "failed"
             step.error = {"message": str(e)}
-        
-        return step
     
-    async def _extract_result(
+    async def _extract_result_impl(
         self,
+        step: AgentStep,
         output: str,
         exec_result: Dict
-    ) -> AgentStep:
-        """步骤3/4：提取结果"""
-        step = AgentStep(
-            title="提取结果",
-            description="从执行输出中提取分析结果",
-            status="running"
-        )
+    ):
+        """步骤3/4：提取结果（实现）"""
+        # step 已经在外部创建并添加到 self.steps，这里直接更新它
         
         try:
             print(f"\n🔍 [提取结果] 输入参数：output长度={len(output) if output else 0}, exec_result keys={list(exec_result.keys()) if exec_result else None}")
@@ -472,16 +480,10 @@ class AnalysisAgent:
             logger.error(f"结果提取失败: {e}", exc_info=True)
             step.status = "failed"
             step.error = {"message": str(e)}
-        
-        return step
     
-    async def _generate_summary(self) -> AgentStep:
-        """步骤4/5：生成总结"""
-        step = AgentStep(
-            title="生成总结",
-            description="使用 AI 生成分析结果总结",
-            status="running"
-        )
+    async def _generate_summary_impl(self, step: AgentStep):
+        """步骤4/5：生成总结（实现）"""
+        # step 已经在外部创建并添加到 self.steps，这里直接更新它
         
         try:
             print(f"\n🔍 [生成总结] final_result keys={list(self.final_result.keys()) if self.final_result else None}")
@@ -500,13 +502,41 @@ class AnalysisAgent:
                 code=self.steps[0].code if self.steps else ""
             )
             
-            # 调用 AI
+            # 调用 AI（流式）
             messages = [
                 {"role": "system", "content": "你是一个专业的数据分析师，擅长总结分析结果。"},
                 {"role": "user", "content": prompt}
             ]
             
-            summary = ai_client.chat(messages, temperature=0.7, max_tokens=1000)
+            # 使用流式接收 AI 响应
+            response_chunks = []
+            step.output = "🔄 AI 正在生成总结..."
+            
+            print(f"\n🤖 [AI 总结流式生成开始]")
+            chunk_count = 0
+            last_update_length = 0
+            
+            for chunk in ai_client.chat_stream(messages, temperature=0.7, max_tokens=1000):
+                # 检查是否已取消
+                if self._cancelled:
+                    logger.info("⚠️ AI 总结生成被用户中断")
+                    raise asyncio.CancelledError("AI 总结生成已被取消")
+                
+                response_chunks.append(chunk)
+                chunk_count += 1
+                current_response = ''.join(response_chunks)
+                
+                # 每收到 2 个 token 或内容增加超过 20 个字符就更新一次
+                if chunk_count % 2 == 0 or len(current_response) - last_update_length > 20:
+                    # 显示完整的实时内容
+                    step.output = f"🔄 AI 正在生成总结...\n\n{current_response}"
+                    last_update_length = len(current_response)
+                    
+                    # 主动让出控制权，让 SSE 轮询器有机会检测到变化
+                    await asyncio.sleep(0.05)  # 50ms 的暂停
+            
+            summary = ''.join(response_chunks)
+            print(f"\n🤖 [AI 总结生成完成] 总长度: {len(summary)} 字符")
             
             if self.final_result:
                 self.final_result['summary'] = summary
@@ -522,8 +552,6 @@ class AnalysisAgent:
             logger.error(f"总结生成失败: {e}")
             step.status = "failed"
             step.error = {"message": str(e)}
-        
-        return step
     
     def _extract_code_from_response(self, response: str) -> str:
         """从 AI 响应中提取 Python 代码"""

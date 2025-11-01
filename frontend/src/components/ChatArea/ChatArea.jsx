@@ -11,6 +11,7 @@ import {
 import { 
   SendOutlined, 
   EyeOutlined,
+  EyeInvisibleOutlined,
   RocketOutlined,
   StopOutlined 
 } from '@ant-design/icons'
@@ -21,7 +22,7 @@ import './ChatArea.css'
 
 const { TextArea } = Input
 
-function ChatArea({ onShowPreview }) {
+function ChatArea({ showPreview, onTogglePreview }) {
   const {
     uploadMode,
     selectedColumns,
@@ -43,13 +44,50 @@ function ChatArea({ onShowPreview }) {
 
   const [userInput, setUserInput] = useState('')
   const [inputLoading, setInputLoading] = useState(false)
+  const [isNearBottom, setIsNearBottom] = useState(true)  // 用户是否在底部附近
   const chatEndRef = useRef(null)
+  const conversationAreaRef = useRef(null)  // 对话区域容器
   const cancelStreamRef = useRef(null)  // 用于取消流式请求
 
-  // 自动滚动到底部
+  // 检测用户是否在底部附近（距离底部小于 150px）
+  const checkIfNearBottom = () => {
+    if (!conversationAreaRef.current) return true
+    
+    const container = conversationAreaRef.current
+    const scrollTop = container.scrollTop
+    const scrollHeight = container.scrollHeight
+    const clientHeight = container.clientHeight
+    
+    const distanceToBottom = scrollHeight - scrollTop - clientHeight
+    return distanceToBottom < 150
+  }
+
+  // 监听滚动事件
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = conversationAreaRef.current
+    if (!container) return
+    
+    const handleScroll = () => {
+      const nearBottom = checkIfNearBottom()
+      setIsNearBottom(nearBottom)
+      console.log('📜 [ChatArea] 滚动检测:', { nearBottom, distanceToBottom: container.scrollHeight - container.scrollTop - container.clientHeight })
+    }
+    
+    container.addEventListener('scroll', handleScroll)
+    return () => container.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // 监听 agentSteps 变化，在用户接近底部时自动滚动
+  const agentSteps = useAppStore((state) => state.agentSteps)
+  useEffect(() => {
+    if (agentExecuting && agentSteps.length > 0 && isNearBottom) {
+      // 使用 setTimeout 延迟滚动，让 DOM 先更新
+      const timer = setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [agentExecuting, agentSteps, isNearBottom])
 
   // 提交分析需求（使用流式 SSE）
   const handleSubmit = async () => {
@@ -245,7 +283,7 @@ function ChatArea({ onShowPreview }) {
   return (
     <div className="chat-area-container">
       {/* 对话历史区域（包含Agent思考过程）*/}
-      <div className="conversation-area">
+      <div className="conversation-area" ref={conversationAreaRef}>
         <ConversationList agentExecuting={agentExecuting} />
         <div ref={chatEndRef} />
       </div>
@@ -267,10 +305,10 @@ function ChatArea({ onShowPreview }) {
             <Button
               type="link"
               size="small"
-              icon={<EyeOutlined />}
-              onClick={onShowPreview}
+              icon={showPreview ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+              onClick={onTogglePreview}
             >
-              查看数据
+              {showPreview ? '关闭数据' : '查看数据'}
             </Button>
           </Space>
         </div>

@@ -213,18 +213,28 @@ const useAppStore = create((set, get) => ({
   
   // ========== 重置所有状态 ==========
   resetAll: () => set({
+    // 文件相关
+    uploadMode: 'single',
     uploadedFile: null,
     fileData: null,
     sheets: [],
     currentSheetName: null,
+    fileGroup: null,
+    selectedTables: [],
+    // 字段选择
     columns: [],
     selectedColumns: [],
+    // Session
     sessionId: null,
+    // Agent 执行
     agentExecuting: false,
     currentTaskId: null,
     agentSteps: [],
+    // 对话历史
     conversations: [],
+    // 结果
     currentResult: null,
+    // UI 状态
     sidebarCollapsed: false,
     historySidebarVisible: false,
   }),
