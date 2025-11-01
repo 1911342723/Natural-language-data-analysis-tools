@@ -8,10 +8,14 @@ import {
   DeleteOutlined,
   CheckOutlined,
   CloudUploadOutlined,
-  FileTextOutlined
+  FileTextOutlined,
+  ApiOutlined,
+  TableOutlined
 } from '@ant-design/icons'
 import { uploadFile, uploadMultipleFiles } from '@/services/api'
 import useAppStore from '@/store/useAppStore'
+import JsonConverter from '../JsonConverter/JsonConverter'
+import TableToJsonConverter from '../TableToJsonConverter/TableToJsonConverter'
 import './FileUpload.css'
 
 const { Dragger } = Upload
@@ -22,6 +26,8 @@ function FileUpload() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [currentBatchFiles, setCurrentBatchFiles] = useState([])
+  const [jsonConverterVisible, setJsonConverterVisible] = useState(false)
+  const [tableToJsonVisible, setTableToJsonVisible] = useState(false)
   const { 
     uploadMode, 
     setUploadMode, 
@@ -213,6 +219,29 @@ function FileUpload() {
         </Radio.Group>
       </div>
 
+      {/* 工具栏 */}
+      <div className="tools-bar">
+        <Card className="tools-card" bordered={false}>
+          <Space size="middle" wrap>
+            <Text className="tools-label">快捷工具：</Text>
+            <Button
+              icon={<ApiOutlined />}
+              onClick={() => setJsonConverterVisible(true)}
+              className="tool-button"
+            >
+              JSON 转表格
+            </Button>
+            <Button
+              icon={<TableOutlined />}
+              onClick={() => setTableToJsonVisible(true)}
+              className="tool-button"
+            >
+              表格转 JSON
+            </Button>
+          </Space>
+        </Card>
+      </div>
+
       {/* 上传区域 */}
       <div className="upload-main-content">
         <div className="upload-section">
@@ -367,6 +396,18 @@ function FileUpload() {
           </Card>
         </div>
       </div>
+
+      {/* JSON转换器弹窗 */}
+      <JsonConverter
+        visible={jsonConverterVisible}
+        onClose={() => setJsonConverterVisible(false)}
+      />
+
+      {/* 表格转JSON弹窗 */}
+      <TableToJsonConverter
+        visible={tableToJsonVisible}
+        onClose={() => setTableToJsonVisible(false)}
+      />
     </div>
   )
 }

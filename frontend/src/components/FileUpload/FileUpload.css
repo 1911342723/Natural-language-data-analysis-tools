@@ -107,6 +107,50 @@
   font-size: 18px;
 }
 
+/* ==================== 工具栏 ==================== */
+.tools-bar {
+  max-width: 1400px;
+  margin: 0 auto 24px;
+}
+
+.tools-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tools-card .ant-card-body {
+  padding: 16px 24px;
+}
+
+.tools-label {
+  color: #595959;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tool-button {
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+  background: #ffffff;
+  color: #262626;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.tool-button:hover {
+  border-color: #000000;
+  color: #000000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.tool-button .anticon {
+  font-size: 16px;
+}
+
 /* ==================== 主内容区 ==================== */
 .upload-main-content {
   max-width: 1400px;

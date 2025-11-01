@@ -1,0 +1,271 @@
+/* ==================== JSON转换器V2 ==================== */
+.json-converter-modal .ant-modal-body {
+  padding: 20px;
+  max-height: 85vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.json-converter-container-v2 {
+  display: grid;
+  grid-template-columns: 500px 1fr;
+  gap: 16px;
+  min-height: 600px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* ==================== 左侧面板 ==================== */
+.json-left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 500px;
+  overflow: hidden;
+}
+
+.json-left-panel .ant-card {
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.json-left-panel .ant-card-head {
+  background: #fafafa;
+  border-bottom: 1px solid #e8e8e8;
+  min-height: 40px;
+}
+
+.json-left-panel .ant-card-body {
+  padding: 12px;
+  overflow: hidden;
+}
+
+/* ==================== JSON输入 ==================== */
+.json-input {
+  resize: none;
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+  transition: all 0.3s ease;
+  line-height: 1.6;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.json-input:hover {
+  border-color: #d9d9d9;
+}
+
+.json-input:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+}
+
+/* ==================== 字段树 ==================== */
+.field-tree-container {
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fafafa;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.field-tree {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.field-tree .ant-tree-treenode {
+  padding: 4px 0;
+  max-width: 100%;
+}
+
+.field-tree .ant-tree-node-content-wrapper {
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  max-width: 100%;
+}
+
+.field-tree .ant-tree-node-content-wrapper:hover {
+  background: #f0f0f0;
+}
+
+.field-tree .ant-tree-checkbox {
+  margin-right: 8px;
+}
+
+.field-tree .ant-tree-title {
+  font-size: 13px;
+  word-break: break-word;
+}
+
+/* ==================== 右侧面板 ==================== */
+.json-right-panel {
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.json-right-panel .ant-card {
+  height: 100%;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.json-right-panel .ant-card-head {
+  background: #fafafa;
+  border-bottom: 1px solid #e8e8e8;
+  min-height: 40px;
+}
+
+.json-right-panel .ant-card-body {
+  padding: 12px;
+  height: calc(100% - 52px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ==================== 空状态 ==================== */
+.empty-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+  color: #8c8c8c;
+}
+
+/* ==================== 表格 ==================== */
+.result-table {
+  border-radius: 8px;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.result-table .ant-table-wrapper {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.result-table .ant-table {
+  max-width: 100%;
+}
+
+.result-table .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.result-table .ant-table-tbody > tr:hover {
+  background: #f5f5f5;
+}
+
+.result-table .ant-table-tbody > tr > td {
+  padding: 6px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==================== 滚动条 ==================== */
+.json-converter-modal .ant-modal-body::-webkit-scrollbar,
+.field-tree-container::-webkit-scrollbar,
+.json-right-panel .ant-card-body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.json-converter-modal .ant-modal-body::-webkit-scrollbar-track,
+.field-tree-container::-webkit-scrollbar-track,
+.json-right-panel .ant-card-body::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.json-converter-modal .ant-modal-body::-webkit-scrollbar-thumb,
+.field-tree-container::-webkit-scrollbar-thumb,
+.json-right-panel .ant-card-body::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 4px;
+}
+
+.json-converter-modal .ant-modal-body::-webkit-scrollbar-thumb:hover,
+.field-tree-container::-webkit-scrollbar-thumb:hover,
+.json-right-panel .ant-card-body::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* ==================== Modal全局样式 ==================== */
+.json-converter-modal {
+  max-width: 95vw;
+}
+
+.json-converter-modal .ant-modal-content {
+  overflow: hidden;
+}
+
+/* ==================== 响应式 ==================== */
+@media (max-width: 1200px) {
+  .json-converter-container-v2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .json-left-panel {
+    max-height: 400px;
+    overflow-y: auto;
+    max-width: 100%;
+  }
+}
+
+/* ==================== AI输入框 ==================== */
+.ant-space-compact .ant-input {
+  border-radius: 8px 0 0 8px;
+}
+
+.ant-space-compact .ant-btn {
+  border-radius: 0 8px 8px 0;
+}
+
+/* ==================== 卡片标题优化 ==================== */
+.json-left-panel .ant-card-head-title,
+.json-right-panel .ant-card-head-title {
+  padding: 8px 0;
+  font-size: 14px;
+}
+
+/* ==================== Tag样式 ==================== */
+.json-converter-modal .ant-tag {
+  margin: 0;
+  font-size: 11px;
+  padding: 0 6px;
+  line-height: 18px;
+}
+
+/* ==================== 树节点样式 ==================== */
+.field-tree .ant-tree-node-selected {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+.field-tree .ant-tree-checkbox-checked .ant-tree-checkbox-inner {
+  background-color: #000000;
+  border-color: #000000;
+}
+
+.field-tree .ant-tree-checkbox-checked::after {
+  border-color: #000000;
+}
