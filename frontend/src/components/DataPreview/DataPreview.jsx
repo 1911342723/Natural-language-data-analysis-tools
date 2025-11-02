@@ -140,7 +140,7 @@ function DataPreview({ onClose }) {
       <div className="data-preview-container">
         <Card 
           className="preview-card"
-          bordered={false}
+          variant="borderless"
           title={
             <Space>
               <AppstoreAddOutlined />
@@ -357,7 +357,7 @@ function DataPreview({ onClose }) {
     <div className="data-preview-container">
       <Card 
         className="preview-card"
-        bordered={false}
+        variant="borderless"
         title={
           <Space>
             <FileTextOutlined />

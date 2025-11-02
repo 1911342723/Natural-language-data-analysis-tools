@@ -84,7 +84,7 @@ class JupyterSession:
     async def execute_code(
         self,
         code: str,
-        timeout: int = 60
+        timeout: int = 120  # 增加默认超时时间到120秒
     ) -> Dict[str, Any]:
         """
         执行代码并收集输出
@@ -235,10 +235,18 @@ class JupyterSession:
         """关闭 kernel"""
         logger.info(f"关闭 Jupyter Kernel: {self.session_id}")
         
-        if self.kernel_client:
-            self.kernel_client.stop_channels()
-        
-        if self.kernel_manager:
+        try:
+            # 1. 停止客户端通道
+            if self.kernel_client:
+                self.kernel_client.stop_channels()
+                logger.info(f"✅ 客户端通道已停止")
+            
+            # 2. 关闭 kernel manager
+            if self.kernel_manager and self.kernel_manager.is_alive():
+                self.kernel_manager.shutdown_kernel(now=False, restart=False)
+                logger.info(f"✅ Kernel 已关闭")
+        except Exception as e:
+            logger.error(f"关闭 Kernel 时出错: {e}")
             self.kernel_manager.shutdown_kernel(now=True)
 
 
@@ -304,7 +312,7 @@ None
 """
         
         print(f"\n🔧 [Session {session_id[:8]}] 开始执行初始化代码...")
-        result = await session.execute_code(init_code, timeout=30)
+        result = await session.execute_code(init_code, timeout=60)  # 增加初始化超时时间
         
         print(f"🔧 [Session {session_id[:8]}] 初始化结果: error={result.get('error')}, has_stdout={bool(result.get('stdout'))}")
         

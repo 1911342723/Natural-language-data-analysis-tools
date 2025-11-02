@@ -22,7 +22,7 @@ function AISummary({ summary }) {
   }
 
   return (
-    <Card className="ai-summary-card" bordered={false}>
+    <Card className="ai-summary-card" variant="borderless">
       <div className="summary-header">
         <Space>
           <BulbOutlined className="summary-icon" />

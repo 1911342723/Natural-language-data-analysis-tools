@@ -1,15 +1,36 @@
+/* 主容器动画 */
 .agent-execution-container {
   padding: 16px;
   max-height: 500px;
   overflow-y: auto;
   background: #fafafa;
+  animation: fadeInUp 0.5s ease-out;
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 执行卡片 */
 .execution-card {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 2px solid #1677ff;
+  transition: all 0.3s ease;
 }
 
+.execution-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* 执行步骤区域 */
 .execution-steps {
   margin-bottom: 20px;
   padding: 16px;
@@ -17,27 +38,117 @@
   border-radius: 8px;
 }
 
+/* 步骤卡片 - 淡入动画 */
+.execution-steps > div {
+  animation: stepFadeIn 0.4s ease-out;
+  animation-fill-mode: both;
+  transition: all 0.3s ease;
+}
+
+@keyframes stepFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* 为每个步骤添加渐进延迟 */
+.execution-steps > div:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.execution-steps > div:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.execution-steps > div:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.execution-steps > div:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.execution-steps > div:nth-child(5) {
+  animation-delay: 0.4s;
+}
+
+.execution-steps > div:nth-child(n+6) {
+  animation-delay: 0.5s;
+}
+
+/* 步骤卡片hover效果 */
+.execution-steps > div:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 执行详情 */
 .execution-details {
   background: #fff;
   border-radius: 8px;
+  animation: fadeIn 0.5s ease-out 0.3s both;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 代码区域 */
 .code-section {
   margin-top: 12px;
   padding: 12px;
   background: #f5f5f5;
   border-radius: 6px;
   border: 1px solid #e8e8e8;
+  animation: expandDown 0.4s ease-out;
+  transform-origin: top;
 }
 
+@keyframes expandDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: scaleY(0.8);
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+    transform: scaleY(1);
+  }
+}
+
+/* 输出区域 */
 .output-section {
   margin-top: 12px;
   padding: 12px;
   background: #f5f5f5;
   border-radius: 6px;
   border: 1px solid #e8e8e8;
+  animation: fadeInContent 0.5s ease-out;
 }
 
+@keyframes fadeInContent {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 输出内容 */
 .output-content {
   margin: 0;
   padding: 12px;
@@ -51,10 +162,302 @@
   overflow-y: auto;
 }
 
+/* 结果区域 */
 .result-section {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #f0f0f0;
+  animation: slideInUp 0.5s ease-out;
 }
 
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
+/* ===== Ant Design 步骤状态样式增强 ===== */
+
+/* 运行中状态 - 脉冲动画 */
+.ant-steps-item-process .ant-steps-item-icon {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(24, 144, 255, 0);
+  }
+}
+
+/* 完成状态 - 弹出动画 */
+.ant-steps-item-finish .ant-steps-item-icon {
+  animation: successPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes successPop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 等待状态 - 呼吸动画 */
+.ant-steps-item-wait .ant-steps-item-icon {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* 错误状态 - 震动动画 */
+.ant-steps-item-error .ant-steps-item-icon {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* 步骤标题淡入 */
+.ant-steps-item-title {
+  animation: titleFadeIn 0.3s ease-out 0.2s both;
+}
+
+@keyframes titleFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 步骤描述淡入 */
+.ant-steps-item-description {
+  animation: descFadeIn 0.3s ease-out 0.3s both;
+}
+
+@keyframes descFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 进度条动画 */
+.ant-steps-item-process .ant-steps-item-tail::after {
+  animation: progressLine 1.5s ease-in-out infinite;
+}
+
+@keyframes progressLine {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 0%;
+  }
+}
+
+/* ===== 增强Collapse折叠面板动画 ===== */
+
+.ant-collapse-item {
+  transition: all 0.3s ease;
+}
+
+.ant-collapse-content {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 面板展开时的内容动画 */
+.ant-collapse-content-active {
+  animation: collapseExpand 0.3s ease-out;
+}
+
+@keyframes collapseExpand {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== Badge 徽章动画 ===== */
+
+.ant-badge {
+  animation: badgeSlideIn 0.3s ease-out 0.3s both;
+}
+
+@keyframes badgeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 运行中徽章的闪烁效果 */
+.ant-badge-status-processing::before {
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* ===== 自定义滚动条样式 ===== */
+
+.agent-execution-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.agent-execution-container::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.agent-execution-container::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.agent-execution-container::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* ===== 加载中的波纹效果 ===== */
+
+.loading-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(24, 144, 255, 0.1), 
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* ===== 成功完成的微光效果 ===== */
+
+.success-glow {
+  position: relative;
+  border-left: 3px solid #52c41a;
+}
+
+.success-glow::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, 
+    transparent, 
+    #52c41a, 
+    transparent
+  );
+  animation: glowMove 2s ease-in-out infinite;
+}
+
+@keyframes glowMove {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(100%);
+  }
+}
+
+/* ===== 响应式优化 ===== */
+
+@media (max-width: 768px) {
+  .agent-execution-container {
+    padding: 12px;
+  }
+  
+  .execution-steps {
+    padding: 12px;
+  }
+  
+  .code-section,
+  .output-section {
+    padding: 8px;
+  }
+}
+
+/* ===== 性能优化：减少动画复杂度 ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

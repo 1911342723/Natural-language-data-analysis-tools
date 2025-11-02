@@ -168,12 +168,18 @@ const useAppStore = create((set, get) => ({
   currentTaskId: null, // 当前任务ID
   agentSteps: [], // Agent 执行步骤记录
   agentMode: 'smart', // Agent 模式: 'classic' | 'smart'
+  chartStyle: 'publication', // 图表样式: 'publication' | 'presentation' | 'web'
+  enableResearchMode: false, // 是否启用科研模式
+  selectedChartTypes: [], // 用户选择的图表类型数组: ['boxplot', 'scatter', ...]
   
   setAgentExecuting: (executing) => set({ agentExecuting: executing }),
   
   setCurrentTaskId: (taskId) => set({ currentTaskId: taskId }),
   
   setAgentMode: (mode) => set({ agentMode: mode }),
+  setChartStyle: (style) => set({ chartStyle: style }),
+  setEnableResearchMode: (enabled) => set({ enableResearchMode: enabled }),
+  setSelectedChartTypes: (types) => set({ selectedChartTypes: types }),
   
   addAgentStep: (step) => {
     const { agentSteps } = get()
@@ -234,6 +240,9 @@ const useAppStore = create((set, get) => ({
     currentTaskId: null,
     agentSteps: [],
     agentMode: 'smart',
+    chartStyle: 'publication',
+    enableResearchMode: false,
+    selectedChartTypes: [],
     // 对话历史
     conversations: [],
     // 结果

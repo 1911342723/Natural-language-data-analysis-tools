@@ -46,9 +46,9 @@ function AgentExecution() {
 
   // 用户手动切换面板展开/收缩
   const handlePanelChange = (keys) => {
-    console.log('👆 [AgentExecution] 用户切换面板:', keys)
-    console.log('  当前 activeKeys:', activeKeys)
-    console.log('  新的 keys:', keys)
+    // console.log('👆 [AgentExecution] 用户切换面板:', keys)
+    // console.log('  当前 activeKeys:', activeKeys)
+    // console.log('  新的 keys:', keys)
     setActiveKeys(keys)
   }
   
@@ -119,7 +119,7 @@ function AgentExecution() {
                   <Space 
                     onClick={(e) => {
                       e.stopPropagation()
-                      console.log(`🖱️ [AgentExecution] header 被点击: 步骤 #${index}`)
+                      // console.log(`🖱️ [AgentExecution] header 被点击: 步骤 #${index}`)
                       const newKeys = activeKeys.includes(index.toString()) 
                         ? activeKeys.filter(k => k !== index.toString())
                         : [...activeKeys, index.toString()]

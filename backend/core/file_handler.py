@@ -533,9 +533,9 @@ class FileHandler:
                             stats[col]['sum'] += valid_data.sum()
                             stats[col]['count'] += len(valid_data)
                 
-                # 每处理10个chunk打印一次进度
-                if i % 10 == 0 and i > 0:
-                    print(f"📊 [流式统计] 已处理 {(i+1)*chunk_size:,} 行...")
+                # 每处理10个chunk打印一次进度（已禁用）
+                # if i % 10 == 0 and i > 0:
+                #     print(f"📊 [流式统计] 已处理 {(i+1)*chunk_size:,} 行...")
         
         except Exception as e:
             print(f"⚠️ [流式统计] 警告: {e}，跳过流式统计")

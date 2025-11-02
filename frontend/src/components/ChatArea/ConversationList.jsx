@@ -28,7 +28,6 @@ import {
 import useAppStore from '@/store/useAppStore'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import rehypeRaw from 'rehype-raw'
 import CodeExecutor from '@/components/CodeExecutor/CodeExecutor'
 import ResultFormatter from '@/components/ResultFormatter/ResultFormatter'
 import dayjs from 'dayjs'
@@ -46,19 +45,20 @@ function ConversationList({ agentExecuting = false }) {
   const [executingCode, setExecutingCode] = useState({})  // 正在执行的代码状态
   const [showResultCode, setShowResultCode] = useState({})  // 显示结果代码：{ convId: true/false }
   const [editingResultCode, setEditingResultCode] = useState({})  // 编辑结果代码：{ convId: code }
+  const [codeExecutionResult, setCodeExecutionResult] = useState({})  // 代码执行结果：{ convId: { success, charts, error, ... } }
   
   // 监听 agentSteps 变化，强制重新渲染（不再处理滚动，由 ChatArea 处理）
   useEffect(() => {
-    console.log('🔔 [ConversationList] agentSteps 变化:', {
-      agentExecuting,
-      stepCount: agentSteps.length,
-      steps: agentSteps.map((s, i) => ({
-        index: i,
-        title: s.title,
-        status: s.status,
-        outputLength: s.output?.length || 0
-      }))
-    })
+    // console.log('🔔 [ConversationList] agentSteps 变化:', {
+    //   agentExecuting,
+    //   stepCount: agentSteps.length,
+    //   steps: agentSteps.map((s, i) => ({
+    //     index: i,
+    //     title: s.title,
+    //     status: s.status,
+    //     outputLength: s.output?.length || 0
+    //   }))
+    // })
     
     if (agentExecuting && agentSteps.length > 0) {
       forceUpdate(prev => prev + 1)
@@ -209,11 +209,59 @@ function ConversationList({ agentExecuting = false }) {
     // 添加 AI 总结
     if (conv.summary) {
       html += `<h2>智能洞察</h2><div class="content">`
-      // 简单的 Markdown 转 HTML
-      const htmlSummary = conv.summary
-        .replace(/\n/g, '<br>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      // 改进的 Markdown 转 HTML
+      let htmlSummary = conv.summary
+      
+      // 标题转换
+      htmlSummary = htmlSummary.replace(/^### (.*?)$/gm, '<h3>$1</h3>')
+      htmlSummary = htmlSummary.replace(/^## (.*?)$/gm, '<h2>$1</h2>')
+      htmlSummary = htmlSummary.replace(/^# (.*?)$/gm, '<h1>$1</h1>')
+      
+      // 表格转换
+      htmlSummary = htmlSummary.replace(/\|(.+)\|\n\|[-:\s|]+\|/gm, (match) => {
+        const lines = match.split('\n')
+        const headerRow = lines[0]
+        const cells = headerRow.split('|').filter(cell => cell.trim())
+        const cellsHtml = cells.map(cell => `<th>${cell.trim()}</th>`).join('')
+        return `<tr>${cellsHtml}</tr>__TABLE_SEP__`
+      })
+      htmlSummary = htmlSummary.replace(/\|(.+)\|/g, (match) => {
+        if (match.includes('__TABLE_SEP__')) return match
+        const cells = match.split('|').filter(cell => cell.trim())
+        const cellsHtml = cells.map(cell => `<td>${cell.trim()}</td>`).join('')
+        return `<tr>${cellsHtml}</tr>`
+      })
+      htmlSummary = htmlSummary.replace(/__TABLE_SEP__/g, '')
+      
+      // 列表标记
+      htmlSummary = htmlSummary.replace(/^- (.+)$/gm, '__UL_START__<li>$1</li>__UL_END__')
+      htmlSummary = htmlSummary.replace(/^\d+\. (.+)$/gm, '__OL_START__<li>$1</li>__OL_END__')
+      
+      // 加粗、斜体、代码
+      htmlSummary = htmlSummary.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      htmlSummary = htmlSummary.replace(/\*(?!\*)(.*?)\*/g, '<em>$1</em>')
+      htmlSummary = htmlSummary.replace(/`([^`]+)`/g, '<code>$1</code>')
+      
+      // 包装列表
+      htmlSummary = htmlSummary.replace(/(__UL_START__<li>.*?<\/li>__UL_END__(\n|<br>)?)+/gs, (match) => {
+        const items = match.replace(/__UL_START__|__UL_END__|<br>/g, '')
+        return `<ul>${items}</ul>`
+      })
+      htmlSummary = htmlSummary.replace(/(__OL_START__<li>.*?<\/li>__OL_END__(\n|<br>)?)+/gs, (match) => {
+        const items = match.replace(/__OL_START__|__OL_END__|<br>/g, '')
+        return `<ol>${items}</ol>`
+      })
+      
+      // 包装表格
+      htmlSummary = htmlSummary.replace(/(<tr>.*?<\/tr>(\n|<br>)?)+/gs, (match) => {
+        if (match.includes('<table>')) return match
+        const rows = match.replace(/<br>/g, '')
+        return `<table>${rows}</table>`
+      })
+      
+      // 换行
+      htmlSummary = htmlSummary.replace(/\n/g, '<br>')
+      
       html += htmlSummary
       html += `</div>`
     }
@@ -265,10 +313,60 @@ function ConversationList({ agentExecuting = false }) {
       if (conv.summary) {
         htmlContent += `<h2 style="color: #52c41a; margin-top: 30px; border-left: 4px solid #52c41a; padding-left: 10px; margin-bottom: 15px;">智能洞察</h2>`
         htmlContent += `<div style="background: #f6ffed; padding: 20px; border-radius: 4px; margin: 20px 0; line-height: 1.6;">`
-        const htmlSummary = conv.summary
-          .replace(/\n/g, '<br>')
-          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        
+        // 改进的 Markdown 转 HTML 转换
+        let htmlSummary = conv.summary
+        
+        // 1. 标题转换（从 h3 到 h1，避免 h2 被 ## 影响）
+        htmlSummary = htmlSummary.replace(/^### (.*?)$/gm, '<h3 style="font-size: 1.3em; font-weight: 600; margin-top: 1.5em; margin-bottom: 0.8em;">$1</h3>')
+        htmlSummary = htmlSummary.replace(/^## (.*?)$/gm, '<h2 style="font-size: 1.5em; font-weight: 600; margin-top: 1.5em; margin-bottom: 0.8em; border-bottom: 1px solid #f0f0f0; padding-bottom: 0.3em;">$1</h2>')
+        htmlSummary = htmlSummary.replace(/^# (.*?)$/gm, '<h1 style="font-size: 1.8em; font-weight: 600; margin-top: 1.5em; margin-bottom: 0.8em; border-bottom: 2px solid #e8e8e8; padding-bottom: 0.3em;">$1</h1>')
+        
+        // 2. 表格转换（包括表头分隔符）
+        htmlSummary = htmlSummary.replace(/\|(.+)\|\n\|[-:\s|]+\|/gm, (match) => {
+          const lines = match.split('\n')
+          const headerRow = lines[0]
+          const cells = headerRow.split('|').filter(cell => cell.trim())
+          const cellsHtml = cells.map(cell => `<th style="border: 1px solid #d9d9d9; padding: 8px 12px; text-align: left; font-weight: 600; background: #fafafa;">${cell.trim()}</th>`).join('')
+          return `<tr>${cellsHtml}</tr>__TABLE_SEP__`
+        })
+        htmlSummary = htmlSummary.replace(/\|(.+)\|/g, (match) => {
+          if (match.includes('__TABLE_SEP__')) return match
+          const cells = match.split('|').filter(cell => cell.trim())
+          const cellsHtml = cells.map(cell => `<td style="border: 1px solid #d9d9d9; padding: 8px 12px; text-align: left;">${cell.trim()}</td>`).join('')
+          return `<tr>${cellsHtml}</tr>`
+        })
+        htmlSummary = htmlSummary.replace(/__TABLE_SEP__/g, '')
+        
+        // 3. 列表项标记（先标记，后统一包装）
+        htmlSummary = htmlSummary.replace(/^- (.+)$/gm, '__UL_START__<li style="margin: 0.5em 0; line-height: 1.6;">$1</li>__UL_END__')
+        htmlSummary = htmlSummary.replace(/^\d+\. (.+)$/gm, '__OL_START__<li style="margin: 0.5em 0; line-height: 1.6;">$1</li>__OL_END__')
+        
+        // 4. 加粗、斜体、代码
+        htmlSummary = htmlSummary.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: 600; color: #000;">$1</strong>')
+        htmlSummary = htmlSummary.replace(/\*(?!\*)(.*?)\*/g, '<em>$1</em>')
+        htmlSummary = htmlSummary.replace(/`([^`]+)`/g, '<code style="background: #f5f5f5; padding: 0.2em 0.4em; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 0.9em; color: #d73a49;">$1</code>')
+        
+        // 5. 包装连续的列表项
+        htmlSummary = htmlSummary.replace(/(__UL_START__<li[^>]*>.*?<\/li>__UL_END__(\n|<br>)?)+/gs, (match) => {
+          const items = match.replace(/__UL_START__|__UL_END__|<br>/g, '')
+          return `<ul style="margin: 1em 0; padding-left: 2em; list-style-type: disc;">${items}</ul>`
+        })
+        htmlSummary = htmlSummary.replace(/(__OL_START__<li[^>]*>.*?<\/li>__OL_END__(\n|<br>)?)+/gs, (match) => {
+          const items = match.replace(/__OL_START__|__OL_END__|<br>/g, '')
+          return `<ol style="margin: 1em 0; padding-left: 2em;">${items}</ol>`
+        })
+        
+        // 6. 包装连续的表格行
+        htmlSummary = htmlSummary.replace(/(<tr>.*?<\/tr>(\n|<br>)?)+/gs, (match) => {
+          if (match.includes('<table>')) return match
+          const rows = match.replace(/<br>/g, '')
+          return `<table style="border-collapse: collapse; width: 100%; margin: 1em 0; min-width: 400px;">${rows}</table>`
+        })
+        
+        // 7. 换行处理（最后）
+        htmlSummary = htmlSummary.replace(/\n/g, '<br>')
+        
         htmlContent += htmlSummary
         htmlContent += `</div>`
       }
@@ -327,47 +425,122 @@ function ConversationList({ agentExecuting = false }) {
     })
   }
 
-  // 获取生成图表的代码（从 steps 中找到执行代码的步骤）
+  // 获取生成图表的代码（从 steps 中提取最后执行的代码）
   const getChartGenerationCode = (conv) => {
     if (!conv.steps || conv.steps.length === 0) return null
     
-    // 找到包含代码的步骤（通常是"执行代码"或"生成代码"步骤）
-    const codeStep = conv.steps.find(step => 
-      step.code && (step.title?.includes('代码') || step.title?.includes('执行'))
-    )
+    // 优先策略：提取最后一个成功执行的代码步骤（通常是绘图代码）
+    // 这样用户可以直接编辑，就像 Jupyter cell 一样
+    // 假设数据（df）已经在 session 中加载
     
-    return codeStep?.code || null
+    // 1. 查找最后一个状态为 success 且包含代码的步骤
+    const successSteps = conv.steps
+      .filter(step => step.status === 'success' && step.code && step.code.trim())
+    
+    if (successSteps.length > 0) {
+      // 返回最后一个成功步骤的代码
+      return successSteps[successSteps.length - 1].code
+    }
+    
+    // 2. 如果没有成功的步骤，查找最后一个包含代码的步骤
+    const allCodeSteps = conv.steps
+      .filter(step => step.code && step.code.trim())
+    
+    if (allCodeSteps.length > 0) {
+      return allCodeSteps[allCodeSteps.length - 1].code
+    }
+    
+    return null
   }
 
   // 执行结果中的代码（重新生成图表）
   const executeResultCode = async (convId, code) => {
     if (!sessionId) {
-      message.error('会话未初始化')
+      // 清除之前的结果，显示错误
+      setCodeExecutionResult({
+        ...codeExecutionResult,
+        [convId]: {
+          success: false,
+          error: '会话未初始化，请刷新页面重试'
+        }
+      })
       return
     }
 
     try {
       setExecutingCode({ ...executingCode, [`result-${convId}`]: true })
-      message.loading({ content: '正在重新生成图表...', key: `execute-result-${convId}`, duration: 0 })
+      // 清除之前的执行结果
+      setCodeExecutionResult({
+        ...codeExecutionResult,
+        [convId]: { executing: true }
+      })
 
-      const response = await fetch('http://localhost:8000/api/jupyter/execute', {
+      // 使用专门的代码执行API
+      const response = await fetch('/api/jupyter/execute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, code })
+        body: JSON.stringify({ 
+          session_id: sessionId, 
+          code: code
+        })
       })
 
       const result = await response.json()
       
+      // console.log('📊 重新生成结果:', result)
+      
       if (result.success) {
-        // 更新对话中的图表
+        const outputResult = result.data?.result || {}
+        const hasCharts = outputResult.charts && outputResult.charts.length > 0
+        const hasData = outputResult.data && outputResult.data.length > 0
+        const hasText = outputResult.text && outputResult.text.length > 0
+        
+        // console.log('📊 输出统计:', {
+        //   charts: outputResult.charts?.length || 0,
+        //   data: outputResult.data?.length || 0,
+        //   text: outputResult.text?.length || 0
+        // })
+        
+        // 如果没有任何输出，检查代码是否包含输出语句
+        if (!hasCharts && !hasData && !hasText) {
+          // 检查代码中是否包含可能的输出语句
+          const hasDisplayStatement = code.includes('display(') || 
+                                     code.includes('.show()') || 
+                                     code.includes('plt.savefig')
+          const hasPrintStatement = code.includes('print(')
+          
+          let warningMsg = ''
+          if (hasDisplayStatement || hasPrintStatement) {
+            // 代码包含输出语句但没产生输出，可能是逻辑错误
+            warningMsg = '⚠️ 代码执行成功但未产生输出。请检查代码逻辑或数据是否正确。'
+          } else {
+            // 代码缺少输出语句
+            warningMsg = '⚠️ 代码缺少输出语句（如 display(Image(...)) 或 print()）。'
+          }
+          
+          // 保存警告结果
+          setCodeExecutionResult({
+            ...codeExecutionResult,
+            [convId]: {
+              success: false,
+              warning: warningMsg
+            }
+          })
+          setExecutingCode({ ...executingCode, [`result-${convId}`]: false })
+          return
+        }
+        
+        // 只有在有新输出时才更新结果
         const updatedConvs = conversations.map(c => {
           if (c.id === convId) {
             return {
               ...c,
               result: {
                 ...c.result,
-                charts: result.result?.charts || [],
-                text: result.result?.text || c.result.text
+                // 只更新有内容的部分，保留原有的其他部分
+                charts: hasCharts ? outputResult.charts : (c.result?.charts || []),
+                data: hasData ? outputResult.data : (c.result?.data || []),
+                text: hasText ? outputResult.text : (c.result?.text || [])
               }
             }
           }
@@ -376,18 +549,45 @@ function ConversationList({ agentExecuting = false }) {
         
         useAppStore.setState({ conversations: updatedConvs })
         
-        message.success({ content: '图表重新生成成功！', key: `execute-result-${convId}`, duration: 2 })
+        // 保存成功结果
+        setCodeExecutionResult({
+          ...codeExecutionResult,
+          [convId]: {
+            success: true,
+            charts: outputResult.charts || [],
+            data: outputResult.data || [],
+            text: outputResult.text || []
+          }
+        })
         
         // 退出编辑模式
         const newEditingResultCode = { ...editingResultCode }
         delete newEditingResultCode[convId]
         setEditingResultCode(newEditingResultCode)
       } else {
-        message.error({ content: `执行失败: ${result.error}`, key: `execute-result-${convId}`, duration: 3 })
+        // 保存错误结果
+        const errorMsg = result.error || result.message || '未知错误'
+        const errorDetail = result.error_detail
+        
+        setCodeExecutionResult({
+          ...codeExecutionResult,
+          [convId]: {
+            success: false,
+            error: errorMsg,
+            errorDetail: errorDetail
+          }
+        })
       }
     } catch (error) {
       console.error('执行代码失败:', error)
-      message.error({ content: '执行失败，请检查网络连接', key: `execute-result-${convId}`, duration: 3 })
+      // 保存网络错误
+      setCodeExecutionResult({
+        ...codeExecutionResult,
+        [convId]: {
+          success: false,
+          error: '执行失败，请检查网络连接'
+        }
+      })
     } finally {
       setExecutingCode({ ...executingCode, [`result-${convId}`]: false })
     }
@@ -401,10 +601,9 @@ function ConversationList({ agentExecuting = false }) {
     return (
       <div>
         {/* 基本消息 */}
-        <div className="message-body markdown-container" style={{ marginBottom: hasSteps ? 12 : 0 }}>
+        <div className="message-body markdown-content" style={{ marginBottom: hasSteps ? 12 : 0 }}>
           <ReactMarkdown 
             remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw]}
           >
             {conv.content}
           </ReactMarkdown>
@@ -478,15 +677,15 @@ function ConversationList({ agentExecuting = false }) {
                         {/* 优先显示 result.stdout，否则显示 output */}
                         {step.result?.stdout && step.result.stdout.length > 0 ? (
                           step.result.stdout.map((line, lineIdx) => (
-                            <div key={lineIdx} className="markdown-content markdown-container">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                            <div key={lineIdx} className="markdown-content">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {line}
                               </ReactMarkdown>
                             </div>
                           ))
                         ) : (
-                          <div className="markdown-content markdown-container">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                          <div className="markdown-content">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {step.output || ''}
                             </ReactMarkdown>
                           </div>
@@ -686,9 +885,20 @@ function ConversationList({ agentExecuting = false }) {
                 {showResultCode[conv.id] && getChartGenerationCode(conv) && (
                   <div style={{ marginBottom: 16, padding: 12, background: '#fafafa', border: '1px solid #d9d9d9', borderRadius: 4 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <Text strong>
-                        <CodeOutlined /> 图表生成代码
-                      </Text>
+                      <div>
+                        <Text strong>
+                          <CodeOutlined /> 图表生成代码
+                        </Text>
+                        {!editingResultCode[conv.id] ? (
+                          <Text type="secondary" style={{ fontSize: 12, marginLeft: 12 }}>
+                            💡 提示：点击"编辑"可修改代码并重新生成
+                          </Text>
+                        ) : (
+                          <Text type="success" style={{ fontSize: 12, marginLeft: 12 }}>
+                            ✅ 数据（df）已加载，可直接使用 | 修改后点击"重新生成"
+                          </Text>
+                        )}
+                      </div>
                       <Space>
                         <Button
                           size="small"
@@ -756,6 +966,112 @@ function ConversationList({ agentExecuting = false }) {
                         {getChartGenerationCode(conv)}
                       </pre>
                     )}
+                    
+                    {/* 代码执行结果区域（像 Jupyter Notebook） */}
+                    {codeExecutionResult[conv.id] && (
+                      <div style={{ 
+                        marginTop: 8, 
+                        padding: 12, 
+                        background: 'white',
+                        border: `1px solid ${codeExecutionResult[conv.id].success === false ? '#ff4d4f' : '#d9d9d9'}`,
+                        borderRadius: 4
+                      }}>
+                        {codeExecutionResult[conv.id].executing ? (
+                          <div style={{ display: 'flex', alignItems: 'center', color: '#1890ff' }}>
+                            <LoadingOutlined style={{ marginRight: 8 }} />
+                            <Text>执行中...</Text>
+                          </div>
+                        ) : codeExecutionResult[conv.id].success ? (
+                          // 成功：显示图表和文本
+                          <div>
+                            {/* 文本输出 */}
+                            {codeExecutionResult[conv.id].text && codeExecutionResult[conv.id].text.length > 0 && (
+                              <div style={{ marginBottom: 12 }}>
+                                {codeExecutionResult[conv.id].text.map((text, idx) => (
+                                  <pre key={idx} style={{ 
+                                    margin: 0, 
+                                    whiteSpace: 'pre-wrap',
+                                    fontFamily: 'inherit',
+                                    fontSize: 13
+                                  }}>
+                                    {text}
+                                  </pre>
+                                ))}
+                              </div>
+                            )}
+                            
+                            {/* 图表输出 */}
+                            {codeExecutionResult[conv.id].charts && codeExecutionResult[conv.id].charts.length > 0 && (
+                              <div>
+                                {codeExecutionResult[conv.id].charts.map((chart, idx) => (
+                                  <img 
+                                    key={idx}
+                                    src={`data:image/png;base64,${chart.data}`} 
+                                    alt={`Chart ${idx + 1}`}
+                                    style={{ maxWidth: '100%', display: 'block', marginTop: idx > 0 ? 12 : 0 }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                            
+                            {/* 数据表格 */}
+                            {codeExecutionResult[conv.id].data && codeExecutionResult[conv.id].data.length > 0 && (
+                              <div style={{ marginTop: 12 }}>
+                                {codeExecutionResult[conv.id].data.map((item, idx) => (
+                                  <div 
+                                    key={idx} 
+                                    dangerouslySetInnerHTML={{ __html: item.content }}
+                                    style={{ marginTop: idx > 0 ? 12 : 0 }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          // 失败或警告：显示错误信息
+                          <div>
+                            {codeExecutionResult[conv.id].warning ? (
+                              <Alert
+                                message="执行警告"
+                                description={codeExecutionResult[conv.id].warning}
+                                type="warning"
+                                showIcon
+                              />
+                            ) : (
+                              <div>
+                                <div style={{ 
+                                  padding: '8px 12px', 
+                                  background: '#fff2f0', 
+                                  border: '1px solid #ffccc7',
+                                  borderRadius: 4,
+                                  marginBottom: 8
+                                }}>
+                                  <div style={{ color: '#cf1322', fontWeight: 'bold', marginBottom: 4 }}>
+                                    <CloseCircleOutlined style={{ marginRight: 6 }} />
+                                    执行失败
+                                  </div>
+                                  <div style={{ color: '#595959', fontSize: 13 }}>
+                                    {codeExecutionResult[conv.id].error}
+                                  </div>
+                                </div>
+                                
+                                {/* 显示错误详情（如果有） */}
+                                {codeExecutionResult[conv.id].errorDetail && (
+                                  <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>
+                                    <div>💡 调试提示：</div>
+                                    <ul style={{ margin: '4px 0', paddingLeft: 20 }}>
+                                      <li>检查列名是否正确（区分大小写）</li>
+                                      <li>检查变量名是否存在</li>
+                                      <li>检查数据类型是否匹配</li>
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
                 
@@ -791,8 +1107,8 @@ function ConversationList({ agentExecuting = false }) {
                   lineHeight: 1.8
                 }}>
                   {conv.result.text.map((text, idx) => (
-                    <div key={idx} className="markdown-content markdown-container">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                    <div key={idx} className="markdown-content">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {text}
                       </ReactMarkdown>
                     </div>
@@ -831,11 +1147,30 @@ function ConversationList({ agentExecuting = false }) {
               borderColor: '#b7eb8f',
               marginBottom: 12 
             }}
-            headStyle={{ background: '#f6ffed', borderBottom: '1px solid #b7eb8f' }}
+            styles={{ header: { background: '#f6ffed', borderBottom: '1px solid #b7eb8f' } }}
           >
-            <div className="markdown-content markdown-container" style={{ fontSize: 14, lineHeight: 1.8 }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                {conv.summary}
+            <div className="markdown-content" style={{ fontSize: 14, lineHeight: 1.8 }}>
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  // 自定义组件样式
+                  h1: (props) => <h1 style={{fontSize: '1.8em', fontWeight: 600, marginTop: '1.5em', marginBottom: '0.8em', borderBottom: '2px solid #e8e8e8', paddingBottom: '0.3em'}} {...props} />,
+                  h2: (props) => <h2 style={{fontSize: '1.5em', fontWeight: 600, marginTop: '1.5em', marginBottom: '0.8em', borderBottom: '1px solid #f0f0f0', paddingBottom: '0.3em'}} {...props} />,
+                  h3: (props) => <h3 style={{fontSize: '1.3em', fontWeight: 600, marginTop: '1.5em', marginBottom: '0.8em'}} {...props} />,
+                  p: (props) => <p style={{margin: '1em 0', lineHeight: 1.8}} {...props} />,
+                  ul: (props) => <ul style={{margin: '1em 0', paddingLeft: '2em', listStyleType: 'disc'}} {...props} />,
+                  ol: (props) => <ol style={{margin: '1em 0', paddingLeft: '2em'}} {...props} />,
+                  li: (props) => <li style={{margin: '0.5em 0', lineHeight: 1.6}} {...props} />,
+                  strong: (props) => <strong style={{fontWeight: 600, color: '#000'}} {...props} />,
+                  table: (props) => <div style={{overflowX: 'auto', margin: '1em 0'}}><table style={{borderCollapse: 'collapse', width: '100%', minWidth: '600px'}} {...props} /></div>,
+                  thead: (props) => <thead style={{background: '#fafafa'}} {...props} />,
+                  th: (props) => <th style={{border: '1px solid #d9d9d9', padding: '8px 12px', textAlign: 'left', fontWeight: 600}} {...props} />,
+                  td: (props) => <td style={{border: '1px solid #d9d9d9', padding: '8px 12px', textAlign: 'left'}} {...props} />,
+                  blockquote: (props) => <blockquote style={{borderLeft: '4px solid #1890ff', paddingLeft: '16px', margin: '1em 0', color: '#595959', background: '#f0f5ff', padding: '12px 16px', borderRadius: '4px'}} {...props} />,
+                  code: (props) => <code style={{background: '#f5f5f5', padding: '0.2em 0.4em', borderRadius: '3px', fontFamily: 'Consolas, Monaco, monospace', fontSize: '0.9em', color: '#d73a49'}} {...props} />,
+                }}
+              >
+                {conv.summary || '暂无总结'}
               </ReactMarkdown>
             </div>
           </Card>
@@ -939,20 +1274,20 @@ function ConversationList({ agentExecuting = false }) {
               <Collapse
                 activeKey={activeStepKeys}
                 onChange={(keys) => {
-                  console.log('👆 [ConversationList] 用户切换步骤面板:', keys)
+                  // console.log('👆 [ConversationList] 用户切换步骤面板:', keys)
                   setActiveStepKeys(keys)
                 }}
                 ghost
                 style={{ background: 'transparent' }}
               >
                 {agentSteps.map((step, idx) => {
-                  console.log(`[渲染步骤 ${idx}]:`, {
-                    title: step.title,
-                    status: step.status,
-                    hasOutput: !!step.output,
-                    outputLength: step.output?.length || 0,
-                    hasCode: !!step.code
-                  })
+                  // console.log(`[渲染步骤 ${idx}]:`, {
+                  //   title: step.title,
+                  //   status: step.status,
+                  //   hasOutput: !!step.output,
+                  //   outputLength: step.output?.length || 0,
+                  //   hasCode: !!step.code
+                  // })
                   return (
                   <Panel
                     key={`step-${idx}`}
@@ -983,8 +1318,10 @@ function ConversationList({ agentExecuting = false }) {
                         <Alert
                           type="info"
                           message={
-                            <div style={{ whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.6, fontFamily: 'monospace' }}>
-                              {step.output}
+                            <div className="markdown-content">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {step.output}
+                              </ReactMarkdown>
                             </div>
                           }
                           style={{ background: '#f0f5ff', border: '1px solid #adc6ff' }}
@@ -1023,15 +1360,15 @@ function ConversationList({ agentExecuting = false }) {
                         }}>
                           {step.result?.stdout && step.result.stdout.length > 0 ? (
                             step.result.stdout.map((line, lineIdx) => (
-                              <div key={lineIdx} className="markdown-content markdown-container">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                              <div key={lineIdx} className="markdown-content">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                   {line}
                                 </ReactMarkdown>
                               </div>
                             ))
                           ) : (
-                            <div className="markdown-content markdown-container">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                            <div className="markdown-content">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {step.output || ''}
                               </ReactMarkdown>
                             </div>

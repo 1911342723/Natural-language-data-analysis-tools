@@ -21,6 +21,7 @@ import {
 import useAppStore from '@/store/useAppStore'
 import { submitAnalysisStream, createSession, createMultiSession } from '@/services/api'
 import ConversationList from './ConversationList'
+import ChartStyleSelector from './ChartStyleSelector'
 import './ChatArea.css'
 
 const { TextArea } = Input
@@ -45,6 +46,12 @@ function ChatArea({ showPreview, onTogglePreview }) {
     currentSheetName,
     agentMode,
     setAgentMode,
+    chartStyle,
+    setChartStyle,
+    enableResearchMode,
+    setEnableResearchMode,
+    selectedChartTypes,
+    setSelectedChartTypes,
   } = useAppStore()
 
   const [userInput, setUserInput] = useState('')
@@ -55,6 +62,24 @@ function ChatArea({ showPreview, onTogglePreview }) {
   const chatEndRef = useRef(null)
   const conversationAreaRef = useRef(null)  // 对话区域容器
   const cancelStreamRef = useRef(null)  // 用于取消流式请求
+
+  // 监听科研模式切换，自动调整输入区域高度
+  useEffect(() => {
+    if (enableResearchMode) {
+      // 开启科研模式时，增加输入区域高度
+      setInputAreaHeight(prevHeight => {
+        // 如果当前是默认高度300，则增加到400
+        // 如果用户已经手动调整过，则在当前基础上增加100
+        return prevHeight === 300 ? 400 : prevHeight + 100
+      })
+    } else {
+      // 关闭科研模式时，恢复默认高度
+      setInputAreaHeight(prevHeight => {
+        // 如果当前高度大于300，减少100；否则保持300
+        return prevHeight > 300 ? Math.max(300, prevHeight - 100) : 300
+      })
+    }
+  }, [enableResearchMode])
 
   // 检测用户是否在底部附近（距离底部小于 150px）
   const checkIfNearBottom = () => {
@@ -77,7 +102,7 @@ function ChatArea({ showPreview, onTogglePreview }) {
     const handleScroll = () => {
       const nearBottom = checkIfNearBottom()
       setIsNearBottom(nearBottom)
-      console.log('📜 [ChatArea] 滚动检测:', { nearBottom, distanceToBottom: container.scrollHeight - container.scrollTop - container.clientHeight })
+      // console.log('📜 [ChatArea] 滚动检测:', { nearBottom, distanceToBottom: container.scrollHeight - container.scrollTop - container.clientHeight })
     }
     
     container.addEventListener('scroll', handleScroll)
@@ -125,10 +150,10 @@ function ChatArea({ showPreview, onTogglePreview }) {
       if (!currentSessionId) {
         if (uploadMode === 'multiple') {
           // 多文件模式：创建多文件 Session
-          console.log('🔧 创建多文件 Session:', {
-            group_id: fileGroup.group_id,
-            tables: selectedTables
-          })
+          // console.log('🔧 创建多文件 Session:', {
+          //   group_id: fileGroup.group_id,
+          //   tables: selectedTables
+          // })
           
           const tables = selectedTables.map(t => ({
             file_id: t.file_id,
@@ -140,14 +165,14 @@ function ChatArea({ showPreview, onTogglePreview }) {
           const sessionRes = await createMultiSession(fileGroup.group_id, tables)
           currentSessionId = sessionRes.data.session_id
           setSessionId(currentSessionId)
-          console.log('✅ 多文件 Session 创建成功:', currentSessionId)
-          console.log('✅ 已加载表格:', sessionRes.data.loaded_tables)
+          // console.log('✅ 多文件 Session 创建成功:', currentSessionId)
+          // console.log('✅ 已加载表格:', sessionRes.data.loaded_tables)
         } else {
           // 单文件模式：创建普通 Session
           const sessionRes = await createSession(fileData.file_id, currentSheetName, selectedColumns)
           currentSessionId = sessionRes.data.session_id
           setSessionId(currentSessionId)
-          console.log('✅ Session 创建成功:', currentSessionId)
+          // console.log('✅ Session 创建成功:', currentSessionId)
         }
       }
 
@@ -176,49 +201,39 @@ function ChatArea({ showPreview, onTogglePreview }) {
         agentMode,  // Agent 模式
         // onStep: 每当有新步骤时调用
         (step, stepIndex) => {
-          console.log('🔥 [ChatArea] onStep 回调触发:', {
-            stepIndex,
-            title: step.title,
-            status: step.status,
-            hasOutput: !!step.output,
-            outputLength: step.output?.length || 0
-          })
+          // console.log('🔥 [ChatArea] onStep 回调触发:', {
+          //   stepIndex,
+          //   title: step.title,
+          //   status: step.status,
+          //   hasOutput: !!step.output,
+          //   outputLength: step.output?.length || 0
+          // })
           
           // 如果提供了步骤索引，更新对应的步骤；否则添加新步骤
           if (typeof stepIndex === 'number') {
             const currentSteps = useAppStore.getState().agentSteps
-            console.log(`  📊 当前步骤数: ${currentSteps.length}`)
+            // console.log(`  📊 当前步骤数: ${currentSteps.length}`)
             if (stepIndex < currentSteps.length) {
               // 更新现有步骤
-              console.log(`  🔄 更新步骤 #${stepIndex}`)
+              // console.log(`  🔄 更新步骤 #${stepIndex}`)
               updateAgentStep(stepIndex, step)
             } else {
               // 添加新步骤
-              console.log(`  ➕ 添加新步骤 #${stepIndex}`)
+              // console.log(`  ➕ 添加新步骤 #${stepIndex}`)
               addAgentStep(step)
             }
           } else {
             // 兼容：无索引时总是添加
-            console.log('  ➕ 添加新步骤（无索引）')
+            // console.log('  ➕ 添加新步骤（无索引）')
             addAgentStep(step)
           }
           
           // 验证更新后的状态
           const updatedSteps = useAppStore.getState().agentSteps
-          console.log(`  ✅ 更新后步骤数: ${updatedSteps.length}`)
+          // console.log(`  ✅ 更新后步骤数: ${updatedSteps.length}`)
         },
         // onComplete: Agent 执行完成
         (result) => {
-          console.log('✅ Agent 执行完成:', result)
-          console.log('📊 [调试] 结果详情:', {
-            hasData: !!result.data,
-            hasResult: !!result.data?.result,
-            resultKeys: result.data?.result ? Object.keys(result.data.result) : [],
-            resultText: result.data?.result?.text,
-            resultCharts: result.data?.result?.charts?.length,
-            steps: result.data?.steps?.length,
-            summary: result.data?.summary?.substring(0, 100)
-          })
           
           setAgentExecuting(false)
           
@@ -251,7 +266,11 @@ function ChatArea({ showPreview, onTogglePreview }) {
           })
           
           message.error('分析失败')
-        }
+        },
+        // 科研模式参数
+        chartStyle,
+        enableResearchMode,
+        selectedChartTypes
       )
       
       // 保存取消函数
@@ -381,6 +400,17 @@ function ChatArea({ showPreview, onTogglePreview }) {
             ]}
           />
         </div>
+
+        {/* 科研图表样式选择器 */}
+        <ChartStyleSelector
+          value={chartStyle}
+          onChange={setChartStyle}
+          enableResearchMode={enableResearchMode}
+          onResearchModeChange={setEnableResearchMode}
+          selectedChartTypes={selectedChartTypes}
+          onChartTypesChange={setSelectedChartTypes}
+          agentMode={agentMode}
+        />
 
         {/* 输入框 */}
         <div className="input-wrapper">

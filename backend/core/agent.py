@@ -15,6 +15,11 @@ from .prompts import (
     build_fix_prompt,
     build_summary_prompt
 )
+from .research_prompts import (
+    build_research_chart_prompt,
+    build_chart_type_detection_prompt,
+    RESEARCH_CHART_CONFIGS
+)
 
 logger = logging.getLogger(__name__)
 
@@ -59,12 +64,18 @@ class AnalysisAgent:
         session_id: str,
         user_request: str,
         selected_columns: List[str],
-        data_schema: Dict
+        data_schema: Dict,
+        chart_style: str = "publication",  # 新增：图表样式
+        enable_research_mode: bool = False,  # 新增：是否启用科研模式
+        selected_chart_types: List[str] = []  # 新增：用户选择的图表类型列表
     ):
         self.session_id = session_id
         self.user_request = user_request
         self.selected_columns = selected_columns
         self.data_schema = data_schema
+        self.chart_style = chart_style
+        self.enable_research_mode = enable_research_mode
+        self.selected_chart_types = selected_chart_types or []
         
         self.steps: List[AgentStep] = []
         self.status = "running"  # running | completed | failed
@@ -75,18 +86,66 @@ class AnalysisAgent:
         self.current_retry = 0
         
         self._cancelled = False  # 取消标志
+        
+        # 检测到的图表类型
+        self.detected_chart_type: Optional[str] = None
     
     async def run(self) -> Dict[str, Any]:
         """运行 Agent"""
         logger.info(f"Agent 开始运行 (session: {self.session_id})")
         logger.info(f"用户需求: {self.user_request}")
         logger.info(f"选择字段: {self.selected_columns}")
+        logger.info(f"选择图表类型: {self.selected_chart_types}")
         
         try:
             # 检查是否已取消
             if self._cancelled:
                 raise asyncio.CancelledError("Agent 任务已被取消")
             
+            # 🎯 经典模式多图表支持：如果用户选择了多个图表类型，依次处理每个图表
+            if self.selected_chart_types and len(self.selected_chart_types) > 1:
+                logger.info(f"⭐ 多图表模式：用户选择了 {len(self.selected_chart_types)} 个图表类型")
+                all_results = []
+                
+                for idx, chart_type in enumerate(self.selected_chart_types, 1):
+                    logger.info(f"📊 处理图表 {idx}/{len(self.selected_chart_types)}: {chart_type}")
+                    
+                    # 检查是否已取消
+                    if self._cancelled:
+                        raise asyncio.CancelledError("Agent 任务已被取消")
+                    
+                    # 为每个图表类型执行完整流程
+                    chart_result = await self._run_single_chart(chart_type, idx)
+                    
+                    if chart_result:
+                        # chart_result 包含 { 'chart_type', 'code', 'result', ... }
+                        # 我们只需要 result 字段（包含 charts, text 等）
+                        all_results.append({
+                            'chart_type': chart_type,
+                            'index': idx,
+                            'result': chart_result['result'],  # 直接提取 result 字段
+                            'code': chart_result['code']  # 保留代码供参考
+                        })
+                
+                # 所有图表生成完成后，生成总结
+                if all_results:
+                    step_summary = AgentStep(
+                        title="生成综合总结",
+                        description=f"汇总 {len(all_results)} 个图表的分析结果",
+                        status="running"
+                    )
+                    self.steps.append(step_summary)
+                    await self._generate_multi_chart_summary_impl(step_summary, all_results)
+                    
+                    self.status = "completed"
+                    logger.info(f"✅ 多图表分析完成 (session: {self.session_id})")
+                    return self._build_response()
+                else:
+                    self.status = "failed"
+                    self.error_message = "所有图表生成均失败"
+                    return self._build_response()
+            
+            # 单图表或无指定图表类型的标准流程
             # 步骤1：生成代码
             # 先创建步骤对象并添加到列表，这样SSE可以实时获取到
             step1 = AgentStep(
@@ -185,7 +244,19 @@ class AnalysisAgent:
             # 构建 prompt
             # 检查是否是多表格模式
             is_multi = self.data_schema.get('is_multi', False)
-            if is_multi:
+            
+            # 如果启用科研模式且是单表格，使用科研图表prompt
+            if self.enable_research_mode and not is_multi:
+                logger.info(f"使用科研模式生成代码 (样式: {self.chart_style}, 选择图表: {self.selected_chart_types})")
+                prompt = build_research_chart_prompt(
+                    user_request=self.user_request,
+                    selected_columns=self.selected_columns,
+                    data_schema=self.data_schema,
+                    chart_style=self.chart_style,
+                    enable_statistics=True,
+                    selected_chart_types=self.selected_chart_types
+                )
+            elif is_multi:
                 # 多表格模式：传递 tables_info
                 prompt = build_initial_prompt(
                     user_request=self.user_request,
@@ -198,7 +269,8 @@ class AnalysisAgent:
                 prompt = build_initial_prompt(
                     user_request=self.user_request,
                     selected_columns=self.selected_columns,
-                    data_schema=self.data_schema
+                    data_schema=self.data_schema,
+                    selected_chart_types=self.selected_chart_types
                 )
             
             # 调用 AI（流式）
@@ -564,6 +636,264 @@ class AnalysisAgent:
         
         # 如果没有代码块，尝试提取整个响应
         return response.strip()
+    
+    async def _run_single_chart(self, chart_type: str, index: int) -> Optional[Dict]:
+        """
+        为单个图表类型执行完整的生成-执行-提取流程
+        
+        Args:
+            chart_type: 图表类型名称
+            index: 图表序号
+        
+        Returns:
+            包含代码、输出、结果的字典，失败返回None
+        """
+        try:
+            # 临时修改 selected_chart_types，只包含当前图表类型
+            original_chart_types = self.selected_chart_types
+            self.selected_chart_types = [chart_type]
+            
+            # 步骤1：生成代码
+            step1 = AgentStep(
+                title=f"生成代码（图表 {index}: {chart_type}）",
+                description=f"为 {chart_type} 生成 Python 代码",
+                status="running"
+            )
+            self.steps.append(step1)
+            await self._generate_code_impl(step1)
+            
+            if step1.status == "failed":
+                logger.warning(f"图表 {index} ({chart_type}) 代码生成失败")
+                self.selected_chart_types = original_chart_types  # 恢复
+                return None
+            
+            # 步骤2：执行代码（带重试）
+            retry = 0
+            while retry < self.max_retries:
+                step2 = AgentStep(
+                    title=f"执行代码（图表 {index}: {chart_type}）",
+                    description=f"执行 {chart_type} 的代码",
+                    status="running"
+                )
+                self.steps.append(step2)
+                await self._execute_code_impl(step2, step1.code)
+                
+                if step2.status == "success":
+                    # 步骤3：提取结果
+                    step3 = AgentStep(
+                        title=f"提取结果（图表 {index}: {chart_type}）",
+                        description=f"提取 {chart_type} 的分析结果",
+                        status="running"
+                    )
+                    self.steps.append(step3)
+                    await self._extract_result_impl(step3, step2.output, step2.result)
+                    
+                    if step3.status == "success":
+                        logger.info(f"✅ 图表 {index} ({chart_type}) 生成成功")
+                        self.selected_chart_types = original_chart_types  # 恢复
+                        return {
+                            'chart_type': chart_type,
+                            'code': step1.code,
+                            'execution_output': step2.output,
+                            'result': step3.result,  # ⚠️ 关键：这是提取后的结构化结果（包含 charts, text 等）
+                            'summary_text': step3.output
+                        }
+                    else:
+                        logger.warning(f"图表 {index} ({chart_type}) 结果提取失败")
+                        break
+                
+                # 执行失败，尝试修复
+                retry += 1
+                if retry >= self.max_retries:
+                    logger.warning(f"图表 {index} ({chart_type}) 达到最大重试次数")
+                    break
+                
+                # 修复代码
+                step_fix = AgentStep(
+                    title=f"修复代码（图表 {index}: {chart_type}，第{retry + 1}次尝试）",
+                    description=f"修复 {chart_type} 的代码错误",
+                    status="running"
+                )
+                self.steps.append(step_fix)
+                await self._fix_code_impl(step_fix, step1.code, step2.output)
+                
+                if step_fix.status == "success":
+                    step1.code = step_fix.code  # 更新代码
+                else:
+                    break
+            
+            self.selected_chart_types = original_chart_types  # 恢复
+            return None
+        
+        except Exception as e:
+            logger.error(f"图表 {index} ({chart_type}) 执行异常: {e}", exc_info=True)
+            self.selected_chart_types = original_chart_types if 'original_chart_types' in locals() else self.selected_chart_types
+            return None
+    
+    async def _generate_multi_chart_summary_impl(self, step: AgentStep, all_results: List[Dict]):
+        """
+        为多个图表生成综合总结
+        
+        Args:
+            step: 总结步骤对象
+            all_results: 所有图表的结果列表
+        """
+        try:
+            logger.info(f"生成 {len(all_results)} 个图表的综合总结")
+            
+            # 构建总结prompt
+            charts_info = []
+            logger.info(f"开始构建综合总结，共 {len(all_results)} 个图表结果")
+            
+            for item in all_results:
+                chart_type = item['chart_type']
+                index = item['index']
+                chart_result = item['result']
+                
+                logger.info(f"📊 处理图表 {index} ({chart_type})")
+                logger.info(f"  result keys: {list(chart_result.keys())}")
+                logger.info(f"  result 详情: charts={len(chart_result.get('charts', []))}, text={len(chart_result.get('text', []))}")
+                
+                # 提取文本分析
+                text_analysis = ""
+                if chart_result.get('text'):
+                    text_analysis = '\n'.join(chart_result['text'])
+                    logger.info(f"  ✅ 文本分析长度: {len(text_analysis)} 字符")
+                else:
+                    logger.warning(f"  ⚠️ 没有文本分析")
+                
+                # 统计图表信息
+                charts_count = len(chart_result.get('charts', []))
+                logger.info(f"  📈 包含 {charts_count} 个图表对象")
+                
+                charts_info.append(f"""
+### 图表 {index}: {chart_type}
+**生成情况**: {'✅ 成功生成 ' + str(charts_count) + ' 个图表' if charts_count > 0 else '⚠️ 未生成图表'}
+**分析内容**:
+{text_analysis if text_analysis else '（无文本分析）'}
+""")
+            
+            charts_str = '\n'.join(charts_info)
+            
+            # 打印用于调试
+            print(f"\n📊 [多图表综合总结] 准备传递给 AI 的分析内容：")
+            print(f"{'='*60}")
+            print(charts_str[:1000] + ("..." if len(charts_str) > 1000 else ""))
+            print(f"{'='*60}\n")
+            
+            prompt = f"""
+你是一个专业的数据分析师。用户分析了一份数据，并使用经典模式生成了 {len(all_results)} 个不同类型的图表。
+
+以下是每个图表的详细分析结果：
+
+{charts_str}
+
+---
+
+【任务】
+请基于上述所有图表的分析内容，生成一份**综合分析报告**。
+
+【报告要求】
+1. **数据概览**（10%）：简要说明分析了哪些方面的数据
+2. **核心发现**（40%）：
+   - 从各个图表中提炼出的**关键洞察**（至少3-5条）
+   - 每条发现要**用数据支撑**（引用图表中的具体数据）
+   - 指出数据中的**异常、趋势或模式**
+3. **多图表对比**（30%）：
+   - 不同图表之间的**一致性**（相互印证的发现）
+   - 不同图表之间的**差异性**（不同角度的新见解）
+   - 各图表的**适用性评估**（哪些图表更适合当前数据）
+4. **结论与建议**（20%）：
+   - 基于数据的**总体结论**
+   - **可操作的建议**（2-3条）
+   
+【格式要求】
+- 使用清晰的 Markdown 格式
+- 使用 `##` 和 `###` 作为标题
+- 用 `**加粗**` 强调关键信息
+- 用 `-` 或 `1.` 创建列表
+- 适当使用表格展示对比数据
+
+【注意】
+- 不要简单复述图表内容，要提炼深层洞察
+- 所有结论必须基于提供的图表分析，不要编造数据
+- 如果某个图表提示"不适合"或"警告"，要在总结中指出并说明原因
+
+请生成报告：
+"""
+            
+            # 调用AI生成总结
+            messages = [
+                {"role": "system", "content": "你是一个专业的数据分析总结专家。"},
+                {"role": "user", "content": prompt}
+            ]
+            
+            response_chunks = []
+            step.output = "正在生成综合总结..."
+            
+            chunk_count = 0
+            last_update_length = 0
+            
+            for chunk in ai_client.chat_stream(messages, temperature=0.7, max_tokens=2000):
+                # 检查是否已取消
+                if self._cancelled:
+                    logger.info("⚠️ 综合总结生成被用户中断")
+                    raise asyncio.CancelledError("综合总结生成已被取消")
+                
+                response_chunks.append(chunk)
+                chunk_count += 1
+                current_response = ''.join(response_chunks)
+                
+                # 每收到 2 个 token 或内容增加超过 20 个字符就更新一次
+                if chunk_count % 2 == 0 or len(current_response) - last_update_length > 20:
+                    step.output = f"🔄 AI 正在生成综合总结...\n\n{current_response}"
+                    last_update_length = len(current_response)
+                    
+                    # 主动让出控制权，让 SSE 轮询器有机会检测到变化
+                    await asyncio.sleep(0.05)
+            
+            summary = ''.join(response_chunks)
+            logger.info(f"综合总结生成完成，长度: {len(summary)} 字符")
+            
+            # 合并所有图表的结果
+            all_charts = []
+            all_texts = []
+            
+            for item in all_results:
+                chart_result = item['result']
+                # 收集所有图表
+                if chart_result.get('charts'):
+                    all_charts.extend(chart_result['charts'])
+                    logger.info(f"从 {item['chart_type']} 收集了 {len(chart_result['charts'])} 个图表")
+                # 收集所有文本分析
+                if chart_result.get('text'):
+                    # 添加图表类型标题
+                    all_texts.append(f"## {item['chart_type']}")
+                    all_texts.extend(chart_result['text'])
+                    logger.info(f"从 {item['chart_type']} 收集了 {len(chart_result['text'])} 条文本")
+            
+            logger.info(f"合并结果：共 {len(all_charts)} 个图表，{len(all_texts)} 条文本")
+            
+            # 构建最终结果
+            self.final_result = {
+                'summary': summary,
+                'charts': all_charts,  # 包含所有图表
+                'text': all_texts,  # 包含所有文本分析
+                'charts_count': len(all_charts),
+                'chart_types': [item['chart_type'] for item in all_results]
+            }
+            
+            logger.info(f"最终结果构建完成：{list(self.final_result.keys())}")
+            
+            step.status = "success"
+            step.output = summary
+            
+            logger.info("多图表综合总结生成成功")
+        
+        except Exception as e:
+            logger.error(f"生成多图表总结失败: {e}", exc_info=True)
+            step.status = "failed"
+            step.output = f"生成综合总结失败: {str(e)}"
     
     def _build_response(self) -> Dict[str, Any]:
         """构建响应"""

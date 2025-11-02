@@ -19,7 +19,7 @@ function ResultDisplay({ result }) {
   const hasSummary = result.summary
 
   return (
-    <Card className="result-display-card" bordered={false}>
+    <Card className="result-display-card" variant="borderless">
       <Tabs defaultActiveKey="summary" className="result-tabs">
         {/* AI 总结 */}
         {hasSummary && (

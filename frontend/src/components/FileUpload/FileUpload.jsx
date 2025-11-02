@@ -57,7 +57,6 @@ function FileUpload() {
         setUploadProgress(progress)
       })
 
-      console.log('上传成功，响应数据:', response)
       
       setUploadedFile(file)
       setFileData(response.data)
@@ -216,7 +215,7 @@ function FileUpload() {
       {/* 上传区域 */}
       <div className="upload-main-content">
         <div className="upload-section">
-          <Card className="upload-card" bordered={false}>
+          <Card className="upload-card" variant="borderless">
             {uploadMode === 'single' ? (
               // 单文件上传
               <Dragger
@@ -356,7 +355,7 @@ function FileUpload() {
                   percent={uploadProgress}
                   status="active"
                   strokeColor="#000000"
-                  strokeWidth={12}
+                  size={[undefined, 12]}
                   className="modern-progress"
                 />
                 <Text className="progress-text">

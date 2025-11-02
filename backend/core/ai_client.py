@@ -111,9 +111,9 @@ class AIClient:
                     if chunk.choices[0].delta.content:
                         chunk_count += 1
                         content = chunk.choices[0].delta.content
-                        print(f"📤 收到 chunk #{chunk_count}: {repr(content[:50])}")  # 调试输出
+                        # print(f"📤 收到 chunk #{chunk_count}: {repr(content[:50])}")  # 调试输出（已禁用）
                         yield content
-                logger.info(f"✅ 流式调用完成，共收到 {chunk_count} 个 chunks")
+                # logger.info(f"✅ 流式调用完成，共收到 {chunk_count} 个 chunks")  # 调试日志（已禁用）
             
             elif self.provider == "anthropic":
                 # Anthropic 的消息格式略有不同

@@ -29,6 +29,9 @@ class AnalyzeRequest(BaseModel):
     user_request: str
     selected_columns: List[str]
     agent_mode: str = "smart"  # 默认智能模式
+    chart_style: str = "publication"  # 新增：图表样式 (publication/presentation/web)
+    enable_research_mode: bool = False  # 新增：是否启用科研模式
+    selected_chart_types: List[str] = []  # 新增：用户选择的图表类型列表
 
 
 async def run_agent_task(
@@ -37,11 +40,14 @@ async def run_agent_task(
     user_request: str,
     selected_columns: List[str],
     data_schema: Dict,
-    agent_mode: str = "smart"
+    agent_mode: str = "smart",
+    chart_style: str = "publication",
+    enable_research_mode: bool = False,
+    selected_chart_types: List[str] = []
 ):
     """后台运行 Agent 任务"""
     try:
-        logger.info(f"开始执行 Agent 任务: {task_id}, 模式: {agent_mode}")
+        logger.info(f"开始执行 Agent 任务: {task_id}, 模式: {agent_mode}, 科研模式: {enable_research_mode}, 选择图表: {selected_chart_types}")
         
         # 根据用户选择或配置选择 Agent 类型
         effective_mode = agent_mode or settings.agent_mode
@@ -57,7 +63,10 @@ async def run_agent_task(
                 session_id=session_id,
                 user_request=user_request,
                 selected_columns=selected_columns,
-                data_schema=data_schema
+                data_schema=data_schema,
+                chart_style=chart_style,  # 传递图表样式
+                enable_research_mode=enable_research_mode,  # 传递科研模式标志
+                selected_chart_types=selected_chart_types  # 传递选择的图表类型
             )
         
         # 更新任务状态
@@ -168,7 +177,9 @@ async def submit_analysis(
             request.user_request,
             request.selected_columns,
             data_schema,
-            request.agent_mode  # 传递 agent_mode
+            request.agent_mode,  # 传递 agent_mode
+            request.chart_style,  # 传递图表样式
+            request.enable_research_mode  # 传递科研模式标志
         )
         
         return JSONResponse({
@@ -369,7 +380,10 @@ async def analyze_stream(request: AnalyzeRequest):
                         session_id=request.session_id,
                         user_request=request.user_request,
                         selected_columns=request.selected_columns,
-                        data_schema=data_schema
+                        data_schema=data_schema,
+                        chart_style=request.chart_style,  # 传递图表样式
+                        enable_research_mode=request.enable_research_mode,  # 传递科研模式标志
+                        selected_chart_types=request.selected_chart_types  # 传递选择的图表类型
                     )
                 
                 # 监听 Agent 的步骤变化

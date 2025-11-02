@@ -8,7 +8,8 @@ def build_initial_prompt(
     user_request: str,
     selected_columns: List[str],
     data_schema: Dict,
-    tables_info: Optional[List[Dict]] = None
+    tables_info: Optional[List[Dict]] = None,
+    selected_chart_types: List[str] = []
 ) -> str:
     """
     构建初始代码生成 Prompt
@@ -28,6 +29,7 @@ def build_initial_prompt(
                 },
                 ...
             ]
+        selected_chart_types: 用户选择的图表类型列表（经典模式专用）
     """
     
     # 检测是否是多表格模式
@@ -317,6 +319,27 @@ print(f\"\"\"
 """
     else:
         # === 单表格分析 Prompt ===
+        
+        # 构建图表类型指导
+        chart_types_section = ""
+        if selected_chart_types:
+            chart_types_list = "\n".join([f"- {ct}" for ct in selected_chart_types])
+            chart_types_section = f"""
+
+【⭐ 指定图表类型】（经典模式专用）
+用户已明确选择以下图表类型，请使用这些类型进行分析和可视化：
+{chart_types_list}
+
+**重要说明：**
+1. **必须使用**用户选择的图表类型，而不是自行推断
+2. 如果数据不适合某个选择的图表类型，请：
+   - 在代码前用 print() 输出警告信息（Markdown格式）
+   - 说明为什么不适合，推荐更合适的类型
+   - 但仍要尽力生成用户选择的图表
+3. 如果用户选择多个图表类型，只需生成其中**第一个**图表即可
+   - 系统会自动多次调用，每次生成一个图表
+"""
+        
         prompt = f"""
 你是一个专业的 Python 数据分析代码生成助手。
 
@@ -335,6 +358,7 @@ print(f\"\"\"
 
 【用户需求】
 {user_request}
+{chart_types_section}
 
 ⚠️ **重要**：
 1. **只生成用户要求的内容**，不要添加额外的分析
@@ -504,21 +528,21 @@ def build_summary_prompt(
 
 请**严格基于上述实际分析输出**，生成报告。报告应包含：
 
-## 1. 📊 数据概况
+## 1. 数据概况
 - 数据规模和字段说明
 - 数据质量情况（缺失值、异常值等）
 
-## 2. 🔍 关键发现
+## 2. 关键发现
 - 从数据中发现的3-5个**最重要的事实**
 - 用具体数字支撑（如：平均值、最大值、占比等）
 - 识别数据中的模式、异常或趋势
 
-## 3. 💡 深度洞察
+## 3. 深度洞察
 - 这些发现说明了什么？
 - 哪些数据点特别值得关注？为什么？
 - 数据背后可能的原因是什么？
 
-## 4. 📋 建议与行动
+## 4. 建议与行动
 - 基于数据给出2-3条实用建议
 - 说明建议的优先级和预期效果
 - 如果是业务数据，给出具体行动方案

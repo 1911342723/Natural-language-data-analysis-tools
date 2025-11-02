@@ -35,11 +35,6 @@ function FieldSelector() {
   const currentSheet = getCurrentSheet()
   const columns = currentSheet?.columns || []
   
-  // 调试日志
-  console.log('🎯 FieldSelector - 当前工作表:', currentSheetName)
-  console.log('🎯 FieldSelector - 可用字段数量:', columns.length)
-  console.log('🎯 FieldSelector - 已选字段数量:', selectedColumns.length)
-
   // 过滤字段
   const filteredColumns = columns.filter(col =>
     col.name.toLowerCase().includes(searchText.toLowerCase())

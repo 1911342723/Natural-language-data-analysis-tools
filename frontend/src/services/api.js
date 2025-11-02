@@ -136,7 +136,10 @@ export const submitAnalysisStream = (
   agentMode,
   onStep,
   onComplete,
-  onError
+  onError,
+  chartStyle = 'publication',
+  enableResearchMode = false,
+  selectedChartTypes = []
 ) => {
   // 在开发环境，通过代理访问，直接使用相对路径
   const url = '/api/agent/analyze-stream'
@@ -155,6 +158,9 @@ export const submitAnalysisStream = (
           user_request: userRequest,
           selected_columns: selectedColumns,
           agent_mode: agentMode || 'smart', // 默认智能模式
+          chart_style: chartStyle,
+          enable_research_mode: enableResearchMode,
+          selected_chart_types: selectedChartTypes,
         }),
         signal: controller.signal,
       })
@@ -192,18 +198,10 @@ export const submitAnalysisStream = (
                   console.log('🚀 流式任务开始:', data.task_id)
                   break
                 case 'step':
-                  console.log('📝 步骤更新:', {
-                    index: data.step_index,
-                    title: data.data.title,
-                    status: data.data.status,
-                    outputLength: data.data.output?.length || 0,
-                    outputPreview: data.data.output?.substring(0, 50) || '',
-                    hasCode: !!data.data.code
-                  })
                   if (onStep) onStep(data.data, data.step_index)
                   break
                 case 'complete':
-                  console.log('✅ 流式任务完成:', data.data)
+                  // console.log('✅ 流式任务完成:', data.data)
                   if (onComplete) onComplete(data.data)
                   break
                 case 'error':
