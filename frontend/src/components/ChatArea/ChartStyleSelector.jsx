@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Select, Switch, Space, Tooltip, Typography, Divider } from 'antd'
+import { Select, Switch, Space, Tooltip, Typography, Divider, Button } from 'antd'
 import { 
   ExperimentOutlined, 
   BarChartOutlined, 
@@ -43,10 +43,56 @@ function ChartStyleSelector({
   onResearchModeChange,
   selectedChartTypes,
   onChartTypesChange,
-  agentMode  // 新增：Agent 模式
+  agentMode,  // 新增：Agent 模式
+  compact = false  // 新增：紧凑模式
 }) {
   const selectedStyle = CHART_STYLES.find(s => s.value === value) || CHART_STYLES[0]
 
+  // 紧凑模式：只显示科研模式按钮和图表样式
+  if (compact) {
+    return (
+      <Space size="small" style={{ alignItems: 'center' }}>
+        <Tooltip title={enableResearchMode ? `科研模式：${selectedStyle.label}` : "点击开启科研模式"}>
+          <Button
+            type={enableResearchMode ? 'primary' : 'default'}
+            size="small"
+            icon={<ExperimentOutlined />}
+            onClick={() => onResearchModeChange(!enableResearchMode)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              transition: 'all 0.3s ease'
+            }}
+          >
+            科研模式{enableResearchMode && ` · ${selectedStyle.label}`}
+          </Button>
+        </Tooltip>
+        
+        {enableResearchMode && (
+          <Select
+            value={value}
+            onChange={onChange}
+            style={{ width: 100 }}
+            size="small"
+            options={CHART_STYLES.map(style => ({
+              value: style.value,
+              label: style.label
+            }))}
+          />
+        )}
+        
+        {agentMode === 'classic' && (
+          <ChartTypeSelector 
+            value={selectedChartTypes || []}
+            onChange={onChartTypesChange}
+          />
+        )}
+      </Space>
+    )
+  }
+
+  // 标准模式：完整布局
   return (
     <div className="chart-style-selector">
       <Space direction="vertical" style={{ width: '100%' }} size={4}>

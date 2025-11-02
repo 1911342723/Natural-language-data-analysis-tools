@@ -178,6 +178,8 @@ class AnalysisAgent:
                 self.steps.append(step2)  # ⭐ 先添加，再执行
                 await self._execute_code_impl(step2, step1.code)
                 
+                print(f"🔍 [Agent] 执行步骤完成: step2.status={step2.status}, has_error={hasattr(step2, 'error') and step2.error is not None}")
+                
                 if step2.status == "success":
                     # 执行成功！
                     # 步骤3：提取结果
@@ -202,9 +204,16 @@ class AnalysisAgent:
                         self.status = "completed"
                         logger.info(f"Agent 执行成功 (session: {self.session_id})")
                         return self._build_response()
+                    else:
+                        # 提取结果失败，直接返回错误（不尝试修复代码）
+                        self.status = "failed"
+                        self.error_message = "结果提取失败"
+                        return self._build_response()
                 
                 # 执行失败，尝试修复
                 self.current_retry += 1
+                print(f"🔧 [Agent] 准备修复代码（第 {self.current_retry}/{self.max_retries} 次重试）")
+                
                 if self.current_retry >= self.max_retries:
                     self.status = "failed"
                     self.error_message = f"达到最大重试次数({self.max_retries})"
@@ -212,12 +221,19 @@ class AnalysisAgent:
                 
                 # 步骤3：分析错误并修复
                 step3 = AgentStep(
-                    title=f"修复代码（第{self.current_retry + 1}次尝试）",
+                    title=f"修复代码（第{self.current_retry}次尝试）",
                     description="分析错误信息并修复代码",
                     status="running"
                 )
                 self.steps.append(step3)  # ⭐ 先添加，再执行
-                await self._fix_code_impl(step3, step1.code, step2.error, step2.output)
+                
+                # 确保 error 信息存在
+                error_to_fix = getattr(step2, 'error', None) or {}
+                output_to_analyze = getattr(step2, 'output', '') or ''
+                
+                print(f"🔧 [Agent] 修复信息: error_type={error_to_fix.get('ename', 'Unknown')}, output_len={len(output_to_analyze)}")
+                
+                await self._fix_code_impl(step3, step1.code, error_to_fix, output_to_analyze)
                 
                 if step3.status == "failed":
                     self.status = "failed"
@@ -353,17 +369,35 @@ class AnalysisAgent:
             result = await session.execute_code(code, timeout=120)  # 增加超时时间
             print(f"🔍 [Agent] 执行完成：stdout={len(result.get('stdout', []))}, data={len(result.get('data', []))}, error={result.get('error')}")
             
-            # 检查是否有错误（但仍然保留已生成的结果）
+            # 检查是否有错误
             if result['error']:
                 error_info = result['error']
-                # 如果有输出或图表，标记为部分成功
+                error_type = error_info.get('ename', '')
+                
+                # 区分致命错误和非致命错误
+                # 致命错误：SyntaxError, NameError, ValueError, TypeError, KeyError, IndexError 等
+                # 非致命错误：DeprecationWarning, FutureWarning 等（通常在 stderr 中，不在 error 中）
+                fatal_errors = ['SyntaxError', 'NameError', 'ValueError', 'TypeError', 
+                               'KeyError', 'IndexError', 'AttributeError', 'ZeroDivisionError',
+                               'ImportError', 'ModuleNotFoundError']
+                
+                is_fatal = error_type in fatal_errors
                 has_output = bool(result['stdout'] or result['data'])
-                if has_output:
-                    step.status = "success"  # 有输出就算成功
-                    print(f"⚠️ [Agent] 代码执行有错误，但已生成部分结果，继续处理")
-                else:
+                
+                if is_fatal:
+                    # 致命错误：无论是否有输出，都标记为失败，需要修复
                     step.status = "failed"
                     step.error = error_info
+                    print(f"❌ [Agent] 代码执行失败: {error_type}: {error_info.get('evalue', '')}")
+                elif has_output:
+                    # 非致命错误且有输出：标记为成功
+                    step.status = "success"
+                    print(f"⚠️ [Agent] 代码有非致命错误但已生成结果，继续处理")
+                else:
+                    # 非致命错误但无输出：标记为失败
+                    step.status = "failed"
+                    step.error = error_info
+                    print(f"❌ [Agent] 代码执行失败（无输出）")
                 
                 # 组合 stdout 和 stderr
                 output_lines = []
@@ -504,14 +538,21 @@ class AnalysisAgent:
                         })
                         logger.info(f"提取到 HTML 表格，长度: {len(html_content)}")
                     
-                    # 处理图片
+                    # 处理图片（PNG 或 JPEG）
                     if 'image/png' in data_content:
                         result['charts'].append({
                             'type': 'image',
                             'format': 'png',
                             'data': data_content['image/png']
                         })
-                        print(f"✅ [提取结果] 提取到图表")
+                        print(f"✅ [提取结果] 提取到 PNG 图表")
+                    elif 'image/jpeg' in data_content:
+                        result['charts'].append({
+                            'type': 'image',
+                            'format': 'jpeg',
+                            'data': data_content['image/jpeg']
+                        })
+                        print(f"✅ [提取结果] 提取到 JPEG 图表")
                     
                     # 忽略 text/plain（因为真正的输出已经从 stdout 获取）
                     # text/plain 通常只是 (2527, 4) 这种无意义的输出

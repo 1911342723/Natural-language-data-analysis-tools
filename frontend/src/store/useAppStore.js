@@ -167,7 +167,7 @@ const useAppStore = create((set, get) => ({
   agentExecuting: false, // Agent 是否正在执行
   currentTaskId: null, // 当前任务ID
   agentSteps: [], // Agent 执行步骤记录
-  agentMode: 'smart', // Agent 模式: 'classic' | 'smart'
+  agentMode: 'classic', // Agent 模式: 'classic' | 'smart'（默认经典模式）
   chartStyle: 'publication', // 图表样式: 'publication' | 'presentation' | 'web'
   enableResearchMode: false, // 是否启用科研模式
   selectedChartTypes: [], // 用户选择的图表类型数组: ['boxplot', 'scatter', ...]
@@ -215,10 +215,15 @@ const useAppStore = create((set, get) => ({
   // ========== 侧边栏状态 ==========
   sidebarCollapsed: false,
   historySidebarVisible: false,
+  showPreview: true,
   
   toggleSidebar: () => set({ sidebarCollapsed: !get().sidebarCollapsed }),
   
   setHistorySidebarVisible: (visible) => set({ historySidebarVisible: visible }),
+  
+  setShowPreview: (show) => set({ showPreview: show }),
+  
+  togglePreview: () => set({ showPreview: !get().showPreview }),
   
   // ========== 重置所有状态 ==========
   resetAll: () => set({
@@ -239,7 +244,7 @@ const useAppStore = create((set, get) => ({
     agentExecuting: false,
     currentTaskId: null,
     agentSteps: [],
-    agentMode: 'smart',
+    agentMode: 'classic',
     chartStyle: 'publication',
     enableResearchMode: false,
     selectedChartTypes: [],
@@ -250,6 +255,7 @@ const useAppStore = create((set, get) => ({
     // UI 状态
     sidebarCollapsed: false,
     historySidebarVisible: false,
+    showPreview: true,
   }),
 }))
 

@@ -6,8 +6,7 @@ import ChatArea from '../ChatArea/ChatArea'
 import './WorkArea.css'
 
 function WorkArea() {
-  const { fileData, fileGroup, uploadMode } = useAppStore()
-  const [showPreview, setShowPreview] = useState(true)
+  const { fileData, fileGroup, uploadMode, showPreview, setShowPreview } = useAppStore()
   const [isClosing, setIsClosing] = useState(false)
 
   // 判断是否有数据（单文件或多文件）

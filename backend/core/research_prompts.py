@@ -10,41 +10,47 @@ RESEARCH_CHART_CONFIGS = {
         "name": "出版级（Publication）",
         "description": "符合Nature/Science等期刊投稿标准",
         "config": {
-            "dpi": 300,
+            "dpi": 300,  # 保持300 DPI高质量
             "font_family": "Arial",
             "font_size": 10,
-            "figure_size": (3.5, 2.5),  # 单栏尺寸（英寸）
+            "figure_size": (3.5, 2.5),  # 单栏尺寸（英寸）- 减小尺寸减少内存
             "colors": ["#000000", "#666666", "#999999", "#CCCCCC"],  # 黑白灰友好
             "line_width": 1.5,
             "grid": False,
             "spine_visible": ["left", "bottom"],
+            "format": "jpg",  # 使用JPEG格式，文件小80%
+            "quality": 95,    # JPEG质量95%，接近无损
         }
     },
     "presentation": {
         "name": "演示风格（Presentation）",
         "description": "适合会议展示和PPT",
         "config": {
-            "dpi": 150,
+            "dpi": 150,  # 演示用150足够
             "font_family": "Arial",
             "font_size": 14,
-            "figure_size": (10, 6),
+            "figure_size": (8, 5),  # 适中尺寸
             "colors": ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"],
             "line_width": 2.5,
             "grid": True,
             "spine_visible": ["left", "bottom", "right", "top"],
+            "format": "png",
+            "quality": 95,
         }
     },
     "web": {
         "name": "Web风格",
         "description": "适合网页展示，使用交互式图表",
         "config": {
-            "dpi": 100,
+            "dpi": 96,  # Web标准DPI
             "font_family": "sans-serif",
             "font_size": 12,
-            "figure_size": (12, 7),
+            "figure_size": (8, 5),
             "colors": ["#3498db", "#e74c3c", "#2ecc71", "#f39c12", "#9b59b6"],
             "interactive": True,
             "use_plotly": True,
+            "format": "png",
+            "quality": 95,
         }
     }
 }
@@ -198,9 +204,10 @@ t(自由度) = t值, p = p值, d = 效应量
 {chart_types_section}
 【图表样式】: {style_config['name']}
 - 说明：{style_config['description']}
-- DPI：{style_config['config']['dpi']}
+- DPI：{style_config['config']['dpi']} (高质量输出)
 - 图表尺寸：{style_config['config']['figure_size']}
 - 字体：{style_config['config']['font_family']}
+- 格式：{style_config['config'].get('format', 'png').upper()} (质量{style_config['config'].get('quality', 95)}%)
 
 {statistics_section}
 
@@ -253,7 +260,14 @@ plt.tight_layout()
 
 # ⚠️ 关键：必须这样保存和显示图表
 buf = io.BytesIO()
-plt.savefig(buf, format='png', dpi={style_config['config']['dpi']}, bbox_inches='tight')
+save_format = {style_config['config'].get('format', 'png')}
+save_quality = {style_config['config'].get('quality', 95)}
+if save_format == 'jpg':
+    # JPEG 需要使用 pil_kwargs 传递质量参数
+    plt.savefig(buf, format='jpeg', dpi={style_config['config']['dpi']}, bbox_inches='tight', 
+                pil_kwargs={{'quality': save_quality, 'optimize': True}})
+else:
+    plt.savefig(buf, format='png', dpi={style_config['config']['dpi']}, bbox_inches='tight')
 buf.seek(0)
 plt.close()
 display(Image(buf.getvalue()))  # 必须使用 display(Image(...))
@@ -352,9 +366,16 @@ ax.set_title('不同专业薪资对比', fontsize=14, fontproperties='SimHei')
 plt.xticks(fontproperties='SimHei')
 plt.tight_layout()
 
-# 保存并显示
+# 保存并显示（使用配置的格式）
 buf = io.BytesIO()
-plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
+save_format = {style_config['config'].get('format', 'png')}
+save_quality = {style_config['config'].get('quality', 95)}
+if save_format == 'jpg':
+    # JPEG 需要使用 pil_kwargs 传递质量参数
+    plt.savefig(buf, format='jpeg', dpi={style_config['config']['dpi']}, bbox_inches='tight', 
+                pil_kwargs={{'quality': save_quality, 'optimize': True}})
+else:
+    plt.savefig(buf, format='png', dpi={style_config['config']['dpi']}, bbox_inches='tight')
 buf.seek(0)
 display(Image(buf.getvalue()))
 plt.close()
@@ -436,7 +457,14 @@ plt.tight_layout()
 
 # 显示图表（⚠️ 必须这样做）
 buf = io.BytesIO()
-plt.savefig(buf, format='png', dpi={style_config['config']['dpi']}, bbox_inches='tight')
+save_format = {style_config['config'].get('format', 'png')}
+save_quality = {style_config['config'].get('quality', 95)}
+if save_format == 'jpg':
+    # JPEG 需要使用 pil_kwargs 传递质量参数
+    plt.savefig(buf, format='jpeg', dpi={style_config['config']['dpi']}, bbox_inches='tight', 
+                pil_kwargs={{'quality': save_quality, 'optimize': True}})
+else:
+    plt.savefig(buf, format='png', dpi={style_config['config']['dpi']}, bbox_inches='tight')
 buf.seek(0)
 plt.close()
 display(Image(buf.getvalue()))

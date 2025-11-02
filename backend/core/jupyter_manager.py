@@ -45,8 +45,22 @@ class JupyterSession:
         self.kernel_client = self.kernel_manager.client()
         logger.info(f"✅ 客户端已创建（自动继承密钥配置）")
         
-        # 3. 启动通道
+        # 3. 启动通道，并设置 ZMQ socket 选项（增强稳定性）
         self.kernel_client.start_channels()
+        
+        # 设置 ZMQ socket 参数（防止大消息导致崩溃）
+        try:
+            import zmq
+            # 增加接收缓冲区大小到 50MB
+            if hasattr(self.kernel_client, 'iopub_channel') and hasattr(self.kernel_client.iopub_channel, 'socket'):
+                socket = self.kernel_client.iopub_channel.socket
+                if socket:
+                    socket.setsockopt(zmq.RCVHWM, 0)  # 无限制高水位标记
+                    socket.setsockopt(zmq.SNDHWM, 0)  # 无限制高水位标记
+                    logger.info(f"✅ ZMQ socket 参数已优化")
+        except Exception as e:
+            logger.warning(f"⚠️ 无法设置 ZMQ socket 参数: {e}")
+        
         logger.info(f"✅ 通道已启动")
         
         # 等待 kernel 就绪
@@ -84,10 +98,10 @@ class JupyterSession:
     async def execute_code(
         self,
         code: str,
-        timeout: int = 120  # 增加默认超时时间到120秒
+        timeout: int = 600  # 设置一个很大的兜底超时（10分钟），仅用于防止死循环
     ) -> Dict[str, Any]:
         """
-        执行代码并收集输出
+        智能执行代码并收集输出（不依赖固定超时，基于 Kernel 状态判断）
         
         返回格式：
         {
@@ -111,26 +125,79 @@ class JupyterSession:
             'execution_count': None
         }
         
+        # 检查 Kernel 是否存活
+        if not self.kernel_manager.is_alive():
+            outputs['error'] = {
+                'ename': 'KernelError',
+                'evalue': 'Kernel 已崩溃或异常退出，请重新上传文件',
+                'traceback': ['提示：如果图表 DPI 过高（如300），可能导致内存不足。建议降低 DPI 或简化数据。']
+            }
+            logger.error(f"❌ Kernel 已死亡: {self.session_id}")
+            return outputs
+        
         # 执行代码
-        msg_id = self.kernel_client.execute(code)
+        try:
+            msg_id = self.kernel_client.execute(code)
+        except Exception as e:
+            outputs['error'] = {
+                'ename': 'ExecutionError',
+                'evalue': f'代码执行失败: {str(e)}',
+                'traceback': [str(e)]
+            }
+            logger.error(f"❌ 执行代码失败: {e}")
+            return outputs
         
         start_time = asyncio.get_event_loop().time()
+        last_progress_time = start_time
         
         while True:
-            # 检查超时
-            if asyncio.get_event_loop().time() - start_time > timeout:
+            # 极限超时保护（仅用于防止死循环，正常情况不应触发）
+            elapsed_time = asyncio.get_event_loop().time() - start_time
+            if elapsed_time > timeout:
+                logger.warning(f"⚠️ 触发极限超时保护（{timeout}秒），可能遇到死循环")
                 outputs['error'] = {
-                    'ename': 'TimeoutError',
-                    'evalue': f'代码执行超时（{timeout}秒）',
-                    'traceback': []
+                    'ename': 'ExtremeLimitError',
+                    'evalue': f'执行时间超过极限保护时间（{timeout}秒），已强制中断',
+                    'traceback': ['提示：这通常表示代码陷入死循环，请检查代码逻辑']
                 }
                 break
+            
+            # 每30秒打印一次进度日志（让用户知道还在执行，没有卡住）
+            if elapsed_time - last_progress_time >= 30:
+                print(f"⏳ [执行进度] 已运行 {int(elapsed_time)} 秒，Kernel 仍在处理中...")
+                logger.info(f"代码执行中... 已耗时 {int(elapsed_time)} 秒")
+                last_progress_time = elapsed_time
+            
+            # 定期检查 Kernel 健康状态
+            current_time = asyncio.get_event_loop().time()
+            if int(current_time - start_time) % 10 < 0.5:  # 每10秒检查一次
+                if not self.kernel_manager.is_alive():
+                    outputs['error'] = {
+                        'ename': 'KernelCrashed',
+                        'evalue': 'Kernel 在执行过程中崩溃',
+                        'traceback': ['可能原因：内存不足、图表 DPI 过高、数据量过大']
+                    }
+                    logger.error(f"❌ Kernel 崩溃: {self.session_id}")
+                    break
             
             try:
                 msg = await asyncio.wait_for(
                     asyncio.to_thread(self.kernel_client.get_iopub_msg),
                     timeout=0.5
                 )
+                
+                # 安全地提取消息类型和内容
+                if not isinstance(msg, dict):
+                    logger.warning(f"收到非字典类型的消息: {type(msg)}")
+                    continue
+                
+                if 'header' not in msg or 'msg_type' not in msg.get('header', {}):
+                    logger.warning(f"消息缺少 header 或 msg_type: {msg.keys()}")
+                    continue
+                
+                if 'content' not in msg:
+                    logger.warning(f"消息缺少 content")
+                    continue
                 
                 msg_type = msg['header']['msg_type']
                 content = msg['content']
@@ -142,7 +209,9 @@ class JupyterSession:
                         outputs['stdout'].append(text)
                         print(f"📤 [收到stdout] {text[:100]}")
                     elif content['name'] == 'stderr':
-                        outputs['stderr'].append(content['text'])
+                        stderr_text = content['text']
+                        outputs['stderr'].append(stderr_text)
+                        print(f"⚠️ [收到stderr] {stderr_text[:200]}")
                 
                 # 执行结果
                 elif msg_type == 'execute_result':
@@ -172,45 +241,78 @@ class JupyterSession:
                     # 收到 idle，但消息可能还在传输中，等待并收集
                     print(f"📍 [收到idle] 等待剩余消息...")
                     
-                    # 给消息一些时间到达（最多等待 3 秒）
-                    remaining_count = 0
-                    for wait_round in range(30):  # 30 * 0.1s = 3 秒
+                    # 给消息一些时间到达（最多等待 5 秒）
+                    total_collected = 0
+                    empty_rounds = 0  # 连续空轮次计数
+                    
+                    for wait_round in range(50):  # 50 * 0.1s = 5 秒
+                        collected_this_round = 0
+                        
+                        # 先等待一小段时间，让消息有机会到达
+                        await asyncio.sleep(0.1)
+                        
                         # 检查队列
                         while self.kernel_client.iopub_channel.msg_ready():
                             try:
                                 msg_extra = self.kernel_client.get_iopub_msg(timeout=0.1)
+                                
+                                # 验证消息格式
+                                if not isinstance(msg_extra, dict):
+                                    continue
+                                if 'header' not in msg_extra or 'msg_type' not in msg_extra.get('header', {}):
+                                    continue
+                                if 'content' not in msg_extra:
+                                    continue
+                                
                                 msg_type_extra = msg_extra['header']['msg_type']
                                 content_extra = msg_extra['content']
                                 
-                                if msg_type_extra == 'stream' and content_extra['name'] == 'stdout':
-                                    outputs['stdout'].append(content_extra['text'])
-                                    print(f"📤 [收到stdout] {content_extra['text'][:100]}")
-                                    remaining_count += 1
+                                if msg_type_extra == 'stream' and content_extra.get('name') == 'stdout':
+                                    if 'text' in content_extra:
+                                        outputs['stdout'].append(content_extra['text'])
+                                        print(f"📤 [收到stdout] {content_extra['text'][:100]}")
+                                        collected_this_round += 1
                                 elif msg_type_extra == 'display_data':
-                                    outputs['data'].append({
-                                        'type': 'display_data',
-                                        'data': content_extra['data']
-                                    })
-                                    print(f"📊 [收到display_data]")
-                                    remaining_count += 1
+                                    if 'data' in content_extra:
+                                        outputs['data'].append({
+                                            'type': 'display_data',
+                                            'data': content_extra['data']
+                                        })
+                                        print(f"📊 [收到display_data]")
+                                        collected_this_round += 1
+                                elif msg_type_extra == 'execute_result':
+                                    if 'data' in content_extra:
+                                        outputs['data'].append({
+                                            'type': 'execute_result',
+                                            'data': content_extra['data']
+                                        })
+                                        print(f"📊 [收到execute_result]")
+                                        collected_this_round += 1
                             except Exception as e:
-                                print(f"⚠️ [读取消息失败] {e}")
+                                if "Invalid Signature" not in str(e):
+                                    print(f"⚠️ [读取消息失败] {type(e).__name__}: {e}")
+                                # 跳过错误消息，继续处理下一条
+                                continue
+                        
+                        total_collected += collected_this_round
+                        
+                        # 如果本轮没有收到消息
+                        if collected_this_round == 0:
+                            empty_rounds += 1
+                            # 连续 10 轮（1秒）没有新消息，且已经收到过一些消息，则退出
+                            if empty_rounds >= 10 and total_collected > 0:
+                                print(f"📍 [等待结束] 连续 {empty_rounds} 轮无新消息，已收集 {total_collected} 条")
                                 break
-                        
-                        # 如果连续 3 轮没有新消息，提前退出
-                        if wait_round >= 3 and remaining_count == 0:
-                            print(f"📍 [等待结束] 连续无新消息，退出等待")
-                            break
-                        
-                        # 重置计数器，只统计本轮的消息
-                        if remaining_count > 0:
-                            remaining_count = 0
-                        
-                        # 等待 0.1 秒再检查
-                        await asyncio.sleep(0.1)
+                            # 如果前 15 轮都没消息，也退出（可能本来就没输出）
+                            if empty_rounds >= 15:
+                                print(f"📍 [等待结束] {empty_rounds} 轮均无消息")
+                                break
+                        else:
+                            # 收到消息，重置空轮次计数
+                            empty_rounds = 0
                     
-                    if remaining_count > 0:
-                        print(f"✅ [收集完成] 总共收集了 {remaining_count} 条消息")
+                    if total_collected > 0:
+                        print(f"✅ [收集完成] 总共收集了 {total_collected} 条消息")
                     else:
                         print(f"⚠️ [收集完成] 未收集到额外消息")
                     break
@@ -219,8 +321,15 @@ class JupyterSession:
                 # 继续等待
                 continue
             except Exception as e:
-                logger.error(f"获取消息失败: {e}")
-                break
+                # Invalid Signature 错误不影响功能，只记录调试信息
+                if "Invalid Signature" in str(e):
+                    logger.debug(f"消息签名验证失败（不影响功能）: {e}")
+                else:
+                    # 记录错误但继续处理后续消息
+                    logger.error(f"获取消息失败: {type(e).__name__}: {e}")
+                    print(f"⚠️ [消息处理错误] {type(e).__name__}: {e}")
+                # 继续处理后续消息而不是中断
+                continue
         
         print(f"\n📋 [执行完成] stdout行数={len(outputs['stdout'])}, data项数={len(outputs['data'])}, error={outputs['error'] is not None}")
         if outputs['stdout']:
@@ -266,6 +375,8 @@ class JupyterManager:
         Returns:
             session_id
         """
+        import tempfile
+        
         session_id = str(uuid.uuid4())
         
         # **终极方案**：使用固定密钥，让客户端和 Kernel 使用相同的密钥
@@ -276,11 +387,20 @@ class JupyterManager:
         c = Config()
         c.Session.key = session_key
         
-        # 增加 ZMQ 缓冲区大小，防止大量输出时崩溃（Windows 兼容性）
+        # 增加 ZMQ 缓冲区大小和消息限制（防止大图表导致崩溃）
         c.ZMQInteractiveShell.kernel_timeout = 120  # 增加超时时间
         
+        # ZMQ 消息大小限制（50MB，足够容纳高 DPI 图表）
+        import zmq
+        c.Session.buffer_threshold = 50 * 1024 * 1024  # 50MB
+        c.Session.copy_threshold = 50 * 1024 * 1024   # 50MB
+        
         km = KernelManager(config=c)
-        logger.info(f"✅ 创建 KernelManager，使用固定密钥（{len(session_key)} 字节）+ ZMQ 优化配置")
+        
+        # 设置 Kernel 启动参数（增加内存限制和稳定性）
+        km.kernel_spec_manager.whitelist = set()
+        
+        logger.info(f"✅ 创建 KernelManager，使用固定密钥（{len(session_key)} 字节）+ ZMQ 优化配置（50MB 缓冲）")
         
         # 创建 Session
         session = JupyterSession(session_id, km)
@@ -288,6 +408,7 @@ class JupyterManager:
         
         # 初始化环境：加载数据
         init_code = f"""
+import sys
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -299,22 +420,73 @@ import io
 import base64
 import json
 
+# 预导入科研库（捕获导入错误）
+try:
+    from scipy import stats
+    import scipy
+    from sklearn.linear_model import LinearRegression
+    import sklearn
+    print("✅ 科研库导入成功: scipy, sklearn", file=sys.stderr)
+except ImportError as e:
+    print(f"⚠️ 科研库导入失败: {{e}}", file=sys.stderr)
+    print("提示：请运行 pip install scipy scikit-learn", file=sys.stderr)
+
 # 配置中文显示
 plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
 # 加载数据
-_data_json = '''{data_json}'''
-df = pd.read_json(_data_json, orient='records')
+{{data_load_code}}
 
 # 初始化完成（不输出任何内容到 stdout）
 None
 """
         
-        print(f"\n🔧 [Session {session_id[:8]}] 开始执行初始化代码...")
-        result = await session.execute_code(init_code, timeout=60)  # 增加初始化超时时间
+        # 计算数据大小
+        data_size_mb = len(data_json) / (1024 * 1024)
         
-        print(f"🔧 [Session {session_id[:8]}] 初始化结果: error={result.get('error')}, has_stdout={bool(result.get('stdout'))}")
+        # 对于大文件（> 10MB），使用临时文件传输
+        if data_size_mb > 10:
+            # 创建临时文件
+            temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json', encoding='utf-8')
+            temp_file.write(data_json)
+            temp_file.close()
+            temp_path = temp_file.name
+            
+            # 使用文件路径加载（Windows 路径需要转义）
+            escaped_path = temp_path.replace('\\', '\\\\')
+            
+            data_load_code = f"""
+# 使用临时文件加载大数据（避免 ZMQ 消息过大）
+df = pd.read_json(r'{escaped_path}', orient='records')
+
+# 清理临时文件
+import os
+try:
+    os.unlink(r'{escaped_path}')
+except:
+    pass
+"""
+            print(f"\n🔧 [Session {session_id[:8]}] 开始执行初始化代码... (数据大小: {data_size_mb:.2f} MB, 使用临时文件)")
+        else:
+            # 小文件直接嵌入代码
+            data_load_code = f"""
+_data_json = '''{data_json}'''
+df = pd.read_json(_data_json, orient='records')
+"""
+            print(f"\n🔧 [Session {session_id[:8]}] 开始执行初始化代码... (数据大小: {data_size_mb:.2f} MB)")
+        
+        # 替换模板中的数据加载代码
+        init_code = init_code.replace('{{data_load_code}}', data_load_code)
+        
+        result = await session.execute_code(init_code)  # 使用默认的智能执行（基于 Kernel 状态，不依赖固定超时）
+        
+        print(f"🔧 [Session {session_id[:8]}] 初始化结果: error={result.get('error')}, has_stdout={bool(result.get('stdout'))}, has_stderr={bool(result.get('stderr'))}")
+        
+        # 输出 stderr 信息（导入错误等）
+        if result.get('stderr'):
+            for stderr_line in result.get('stderr'):
+                print(f"  ⚠️ stderr: {stderr_line.strip()}")
         
         if result.get('error'):
             error_msg = result['error'].get('evalue', '未知错误')
@@ -395,7 +567,7 @@ None
 """
         
         print(f"\n🔧 [Multi-Session {session_id[:8]}] 初始化环境...")
-        result = await session.execute_code(init_code, timeout=30)
+        result = await session.execute_code(init_code)  # 使用智能执行（基于 Kernel 状态）
         
         if result.get('error'):
             error_msg = result['error'].get('evalue', '未知错误')
@@ -406,13 +578,47 @@ None
         print(f"✅ [Multi-Session {session_id[:8]}] 环境初始化完成")
         
         # 逐个加载表格
+        import tempfile
+        import os
+        
         for idx, table in enumerate(tables_data):
             alias = table['alias']
             data_json = table['data_json']
             file_name = table['file_name']
             sheet_name = table['sheet_name']
             
-            load_code = f"""
+            # 计算数据大小（用于日志）
+            data_size_mb = len(data_json) / (1024 * 1024)
+            
+            # 对于大文件（> 10MB），使用临时文件传输，避免 ZMQ 消息队列崩溃
+            if data_size_mb > 10:
+                # 创建临时文件
+                temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json', encoding='utf-8')
+                temp_file.write(data_json)
+                temp_file.close()
+                temp_path = temp_file.name
+                
+                # 使用文件路径加载（Windows 路径需要转义）
+                escaped_path = temp_path.replace('\\', '\\\\')
+                
+                load_code = f"""
+# 加载表格: {alias} (使用临时文件，避免 ZMQ 消息过大)
+{alias} = pd.read_json(r'{escaped_path}', orient='records')
+
+# 清理临时文件
+import os
+try:
+    os.unlink(r'{escaped_path}')
+except:
+    pass
+
+# 表格加载完成（不输出到 stdout）
+None
+"""
+                print(f"🔧 [Multi-Session {session_id[:8]}] 加载表格 '{alias}' (文件: {file_name}, 数据大小: {data_size_mb:.2f} MB, 使用临时文件)...")
+            else:
+                # 小文件直接嵌入代码
+                load_code = f"""
 # 加载表格: {alias}
 _data_json_{idx} = '''{data_json}'''
 {alias} = pd.read_json(_data_json_{idx}, orient='records')
@@ -420,9 +626,9 @@ _data_json_{idx} = '''{data_json}'''
 # 表格加载完成（不输出到 stdout）
 None
 """
+                print(f"🔧 [Multi-Session {session_id[:8]}] 加载表格 '{alias}' (文件: {file_name}, 数据大小: {data_size_mb:.2f} MB)...")
             
-            print(f"🔧 [Multi-Session {session_id[:8]}] 加载表格 '{alias}'...")
-            load_result = await session.execute_code(load_code, timeout=30)
+            load_result = await session.execute_code(load_code)  # 智能执行，自动适应文件大小
             
             if load_result.get('error'):
                 error_msg = load_result['error'].get('evalue', '未知错误')

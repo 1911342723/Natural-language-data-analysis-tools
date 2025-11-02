@@ -84,11 +84,13 @@ function ConversationList({ agentExecuting = false }) {
   }
 
   // 下载图表
-  const downloadChart = (base64Data, fileName = 'chart.png') => {
+  const downloadChart = (base64Data, fileName = 'chart.png', format = 'png') => {
     try {
+      // 根据格式设置 MIME 类型
+      const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png'
       // 创建下载链接
       const link = document.createElement('a')
-      link.href = `data:image/png;base64,${base64Data}`
+      link.href = `data:${mimeType};base64,${base64Data}`
       link.download = fileName
       document.body.appendChild(link)
       link.click()
@@ -183,7 +185,9 @@ function ConversationList({ agentExecuting = false }) {
     if (conv.result?.charts && conv.result.charts.length > 0) {
       html += `<h2>数据可视化</h2>`
       conv.result.charts.forEach((chart, idx) => {
-        html += `<img src="data:image/png;base64,${chart.data}" alt="图表 ${idx + 1}" />`
+        const imageFormat = chart.format || 'png'
+        const mimeType = imageFormat === 'jpeg' ? 'image/jpeg' : 'image/png'
+        html += `<img src="data:${mimeType};base64,${chart.data}" alt="图表 ${idx + 1}" />`
       })
     }
 
@@ -294,7 +298,9 @@ function ConversationList({ agentExecuting = false }) {
       if (conv.result?.charts && conv.result.charts.length > 0) {
         htmlContent += `<h2 style="color: #52c41a; margin-top: 30px; border-left: 4px solid #52c41a; padding-left: 10px; margin-bottom: 15px;">数据可视化</h2>`
         conv.result.charts.forEach((chart, idx) => {
-          htmlContent += `<div style="margin: 20px 0; page-break-inside: avoid;"><img src="data:image/png;base64,${chart.data}" style="max-width: 700px; width: 100%; height: auto; border: 1px solid #d9d9d9;" /></div>`
+          const imageFormat = chart.format || 'png'
+          const mimeType = imageFormat === 'jpeg' ? 'image/jpeg' : 'image/png'
+          htmlContent += `<div style="margin: 20px 0; page-break-inside: avoid;"><img src="data:${mimeType};base64,${chart.data}" style="max-width: 700px; width: 100%; height: auto; border: 1px solid #d9d9d9;" /></div>`
         })
       }
 
@@ -1003,14 +1009,18 @@ function ConversationList({ agentExecuting = false }) {
                             {/* 图表输出 */}
                             {codeExecutionResult[conv.id].charts && codeExecutionResult[conv.id].charts.length > 0 && (
                               <div>
-                                {codeExecutionResult[conv.id].charts.map((chart, idx) => (
-                                  <img 
-                                    key={idx}
-                                    src={`data:image/png;base64,${chart.data}`} 
-                                    alt={`Chart ${idx + 1}`}
-                                    style={{ maxWidth: '100%', display: 'block', marginTop: idx > 0 ? 12 : 0 }}
-                                  />
-                                ))}
+                                {codeExecutionResult[conv.id].charts.map((chart, idx) => {
+                                  const imageFormat = chart.format || 'png'
+                                  const mimeType = imageFormat === 'jpeg' ? 'image/jpeg' : 'image/png'
+                                  return (
+                                    <img 
+                                      key={idx}
+                                      src={`data:${mimeType};base64,${chart.data}`} 
+                                      alt={`Chart ${idx + 1}`}
+                                      style={{ maxWidth: '100%', display: 'block', marginTop: idx > 0 ? 12 : 0 }}
+                                    />
+                                  )
+                                })}
                               </div>
                             )}
                             
@@ -1075,20 +1085,24 @@ function ConversationList({ agentExecuting = false }) {
                   </div>
                 )}
                 
-                {conv.result.charts.map((chart, idx) => (
-                  <div key={idx} style={{ marginBottom: 16, position: 'relative' }}>
-                    <img 
-                      src={`data:image/png;base64,${chart.data}`}
-                      alt={`图表 ${idx + 1}`}
-                      style={{ 
-                        maxWidth: '100%', 
-                        borderRadius: 4,
-                        border: '1px solid #d9d9d9',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      }}
-                    />
-                  </div>
-                ))}
+                {conv.result.charts.map((chart, idx) => {
+                  const imageFormat = chart.format || 'png'
+                  const mimeType = imageFormat === 'jpeg' ? 'image/jpeg' : 'image/png'
+                  return (
+                    <div key={idx} style={{ marginBottom: 16, position: 'relative' }}>
+                      <img 
+                        src={`data:${mimeType};base64,${chart.data}`}
+                        alt={`图表 ${idx + 1}`}
+                        style={{ 
+                          maxWidth: '100%', 
+                          borderRadius: 4,
+                          border: '1px solid #d9d9d9',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        }}
+                      />
+                    </div>
+                  )
+                })}
               </div>
             )}
 

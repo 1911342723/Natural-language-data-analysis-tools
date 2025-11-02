@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Checkbox, 
   Button, 
@@ -6,13 +6,17 @@ import {
   Tag, 
   Space, 
   Divider,
-  Typography 
+  Typography,
+  Select 
 } from 'antd'
 import { 
   SearchOutlined, 
   CheckSquareOutlined, 
   BorderOutlined,
-  DatabaseOutlined 
+  DatabaseOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined,
+  FileExcelOutlined
 } from '@ant-design/icons'
 import useAppStore from '@/store/useAppStore'
 import './FieldSelector.css'
@@ -27,6 +31,11 @@ function FieldSelector() {
     getCurrentSheet,
     currentSheetName,
     setSelectedColumns,
+    showPreview,
+    togglePreview,
+    sheets,
+    setCurrentSheet,
+    setSessionId,
   } = useAppStore()
 
   const [searchText, setSearchText] = useState('')
@@ -34,6 +43,18 @@ function FieldSelector() {
   // 获取当前工作表的数据
   const currentSheet = getCurrentSheet()
   const columns = currentSheet?.columns || []
+  
+  // 监听工作表切换，清空搜索框
+  useEffect(() => {
+    setSearchText('')
+  }, [currentSheetName])
+  
+  // 处理工作表切换
+  const handleSheetChange = (sheetName) => {
+    setCurrentSheet(sheetName)
+    clearSelectedColumns()  // 清空字段选择
+    setSessionId(null)  // 清空 session，下次分析时会重新创建
+  }
   
   // 过滤字段
   const filteredColumns = columns.filter(col =>
@@ -72,6 +93,29 @@ function FieldSelector() {
             <Text strong style={{ fontSize: 14, color: '#262626' }}>选择分析字段</Text>
           </div>
           
+          {/* 工作表选择器（多工作表时显示） */}
+          {sheets.length > 1 && (
+            <Select
+              value={currentSheetName}
+              onChange={handleSheetChange}
+              style={{ width: '100%' }}
+              placeholder="选择工作表"
+              suffixIcon={<FileExcelOutlined />}
+            >
+              {sheets.map(sheet => (
+                <Select.Option key={sheet.sheet_name} value={sheet.sheet_name}>
+                  <Space>
+                    <FileExcelOutlined style={{ color: '#1890ff' }} />
+                    <span>{sheet.sheet_name}</span>
+                    <Tag color="blue" style={{ fontSize: 11 }}>
+                      {sheet.total_rows?.toLocaleString() || 0} 行
+                    </Tag>
+                  </Space>
+                </Select.Option>
+              ))}
+            </Select>
+          )}
+          
           <Input
             placeholder="搜索字段名称..."
             prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />}
@@ -81,16 +125,27 @@ function FieldSelector() {
             className="field-search-input"
           />
 
-          <Space size="small" style={{ width: '100%', justifyContent: 'space-between' }}>
-            <Button
-              type="text"
-              size="small"
-              icon={isAllSelected ? <BorderOutlined /> : <CheckSquareOutlined />}
-              onClick={isAllSelected ? clearSelectedColumns : selectAllColumns}
-              style={{ color: '#595959', fontSize: 13 }}
-            >
-              {isAllSelected ? '取消全选' : '全选'}
-            </Button>
+          <Space size="small" style={{ width: '100%', justifyContent: 'space-between', marginTop: 12 }}>
+            <Space size="small">
+              <Button
+                type="text"
+                size="small"
+                icon={isAllSelected ? <BorderOutlined /> : <CheckSquareOutlined />}
+                onClick={isAllSelected ? clearSelectedColumns : selectAllColumns}
+                style={{ color: '#595959', fontSize: 13 }}
+              >
+                {isAllSelected ? '取消全选' : '全选'}
+              </Button>
+              <Button
+                type="text"
+                size="small"
+                icon={showPreview ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                onClick={togglePreview}
+                style={{ color: '#595959', fontSize: 13 }}
+              >
+                {showPreview ? '隐藏数据' : '查看数据'}
+              </Button>
+            </Space>
             <Tag style={{ 
               background: '#fafafa', 
               border: '1px solid #d9d9d9', 

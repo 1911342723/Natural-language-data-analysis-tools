@@ -7,6 +7,7 @@ import {
 } from '@ant-design/icons'
 import useAppStore from '@/store/useAppStore'
 import FieldSelector from '../FieldSelector/FieldSelector'
+import MultiFileTableSelector from '../MultiFileTableSelector/MultiFileTableSelector'
 import WorkArea from '../WorkArea/WorkArea'
 import HistorySidebar from '../History/HistorySidebar'
 import './MainLayout.css'
@@ -68,8 +69,8 @@ function MainLayout() {
       </Header>
 
       <Layout className="main-content-layout">
-        {/* 左侧字段选择侧边栏（单文件模式才显示）*/}
-        {fileData && uploadMode === 'single' && (
+        {/* 左侧侧边栏（单文件显示字段选择，多文件显示表格选择）*/}
+        {hasData && (
           <Sider
             width={300}
             collapsedWidth={0}
@@ -77,15 +78,19 @@ function MainLayout() {
             theme="light"
             className="field-sidebar"
           >
-            <FieldSelector />
+            {uploadMode === 'single' ? (
+              <FieldSelector />
+            ) : (
+              <MultiFileTableSelector />
+            )}
           </Sider>
         )}
 
         {/* 主工作区 */}
         <Layout className="work-area-layout">
           <Content className="work-area-content">
-            {/* 侧边栏折叠按钮（仅单文件模式）*/}
-            {fileData && uploadMode === 'single' && (
+            {/* 侧边栏折叠按钮 */}
+            {hasData && (
               <Button
                 type="text"
                 icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}

@@ -52,34 +52,15 @@ function ChatArea({ showPreview, onTogglePreview }) {
     setEnableResearchMode,
     selectedChartTypes,
     setSelectedChartTypes,
+    sidebarCollapsed,
   } = useAppStore()
 
   const [userInput, setUserInput] = useState('')
   const [inputLoading, setInputLoading] = useState(false)
   const [isNearBottom, setIsNearBottom] = useState(true)  // 用户是否在底部附近
-  const [inputAreaHeight, setInputAreaHeight] = useState(300)  // 输入区域高度
-  const [isDragging, setIsDragging] = useState(false)  // 是否正在拖拽
   const chatEndRef = useRef(null)
   const conversationAreaRef = useRef(null)  // 对话区域容器
   const cancelStreamRef = useRef(null)  // 用于取消流式请求
-
-  // 监听科研模式切换，自动调整输入区域高度
-  useEffect(() => {
-    if (enableResearchMode) {
-      // 开启科研模式时，增加输入区域高度
-      setInputAreaHeight(prevHeight => {
-        // 如果当前是默认高度300，则增加到400
-        // 如果用户已经手动调整过，则在当前基础上增加100
-        return prevHeight === 300 ? 400 : prevHeight + 100
-      })
-    } else {
-      // 关闭科研模式时，恢复默认高度
-      setInputAreaHeight(prevHeight => {
-        // 如果当前高度大于300，减少100；否则保持300
-        return prevHeight > 300 ? Math.max(300, prevHeight - 100) : 300
-      })
-    }
-  }, [enableResearchMode])
 
   // 检测用户是否在底部附近（距离底部小于 150px）
   const checkIfNearBottom = () => {
@@ -294,28 +275,6 @@ function ChatArea({ showPreview, onTogglePreview }) {
     message.info('已停止执行')
   }
 
-  // 处理拖拽开始
-  const handleDragStart = (e) => {
-    setIsDragging(true)
-    const startY = e.clientY
-    const startHeight = inputAreaHeight
-
-    const handleDrag = (e) => {
-      const deltaY = startY - e.clientY
-      const newHeight = Math.max(200, Math.min(800, startHeight + deltaY))
-      setInputAreaHeight(newHeight)
-    }
-
-    const handleDragEnd = () => {
-      setIsDragging(false)
-      document.removeEventListener('mousemove', handleDrag)
-      document.removeEventListener('mouseup', handleDragEnd)
-    }
-
-    document.addEventListener('mousemove', handleDrag)
-    document.addEventListener('mouseup', handleDragEnd)
-  }
-
   // 示例需求（根据模式不同）
   const exampleRequests = uploadMode === 'multiple' ? [
     '对比这几个表格的数据质量（缺失值、重复值）',
@@ -337,81 +296,9 @@ function ChatArea({ showPreview, onTogglePreview }) {
         <div ref={chatEndRef} />
       </div>
 
-      {/* 可拖拽分隔条 */}
-      <div 
-        className={`resize-handle ${isDragging ? 'dragging' : ''}`}
-        onMouseDown={handleDragStart}
-      />
-
       {/* 输入区域 */}
-      <div className="input-area" style={{ height: `${inputAreaHeight}px`, minHeight: '200px', maxHeight: '800px' }}>
-        {/* 顶部信息栏 + 模式切换 */}
-        <div className="input-header">
-          <Space>
-            {uploadMode === 'multiple' ? (
-              <Tag color="default" style={{ border: '1px solid #d9d9d9' }}>
-                已选择 {selectedTables.length} 个表格
-              </Tag>
-            ) : (
-              <Tag color="default" style={{ border: '1px solid #d9d9d9' }}>
-                已选择 {selectedColumns.length} 个字段
-              </Tag>
-            )}
-            <Button
-              type="link"
-              size="small"
-              icon={showPreview ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-              onClick={onTogglePreview}
-              style={{ color: '#595959' }}
-            >
-              {showPreview ? '关闭数据' : '查看数据'}
-            </Button>
-          </Space>
-          
-          {/* Agent 模式选择器（移到右侧） */}
-          <Segmented
-            value={agentMode}
-            onChange={setAgentMode}
-            disabled={agentExecuting}
-            size="small"
-            options={[
-              {
-                label: (
-                  <Tooltip title="按固定步骤执行：生成代码 → 执行 → 提取结果 → 生成总结">
-                    <Space size={4}>
-                      <ThunderboltOutlined style={{ fontSize: 12 }} />
-                      <span style={{ fontSize: 13 }}>经典</span>
-                    </Space>
-                  </Tooltip>
-                ),
-                value: 'classic',
-              },
-              {
-                label: (
-                  <Tooltip title="像人类分析师一样思考：规划 → 探索 → 迭代分析 → 自主决策何时停止">
-                    <Space size={4}>
-                      <BulbOutlined style={{ fontSize: 12 }} />
-                      <span style={{ fontSize: 13 }}>智能</span>
-                    </Space>
-                  </Tooltip>
-                ),
-                value: 'smart',
-              },
-            ]}
-          />
-        </div>
-
-        {/* 科研图表样式选择器 */}
-        <ChartStyleSelector
-          value={chartStyle}
-          onChange={setChartStyle}
-          enableResearchMode={enableResearchMode}
-          onResearchModeChange={setEnableResearchMode}
-          selectedChartTypes={selectedChartTypes}
-          onChartTypesChange={setSelectedChartTypes}
-          agentMode={agentMode}
-        />
-
+      <div className={`input-area ${sidebarCollapsed ? 'fullscreen' : 'with-sidebar'}`}>
+        <div className="input-area-content">
         {/* 输入框 */}
         <div className="input-wrapper">
           <TextArea
@@ -428,11 +315,60 @@ function ChatArea({ showPreview, onTogglePreview }) {
             className="chat-input"
           />
           <div className="input-actions">
-            <div className="input-hint">
+            {/* 左侧：模式选择器 */}
+            <Space size="small">
+              <Segmented
+                value={agentMode}
+                onChange={setAgentMode}
+                disabled={agentExecuting}
+                size="small"
+                options={[
+                  {
+                    label: (
+                      <Tooltip title="按固定步骤执行：生成代码 → 执行 → 提取结果 → 生成总结">
+                        <Space size={4}>
+                          <ThunderboltOutlined style={{ fontSize: 11 }} />
+                          <span style={{ fontSize: 12 }}>经典</span>
+                        </Space>
+                      </Tooltip>
+                    ),
+                    value: 'classic',
+                  },
+                  {
+                    label: (
+                      <Tooltip title="像人类分析师一样思考：规划 → 探索 → 迭代分析 → 自主决策何时停止">
+                        <Space size={4}>
+                          <BulbOutlined style={{ fontSize: 11 }} />
+                          <span style={{ fontSize: 12 }}>智能</span>
+                        </Space>
+                      </Tooltip>
+                    ),
+                    value: 'smart',
+                  },
+                ]}
+              />
+            </Space>
+
+            {/* 中间：字数统计 + 科研模式 */}
+            <Space size="small" style={{ alignItems: 'center' }}>
               {userInput.length > 0 && (
-                <span className="char-count">{userInput.length} / 500</span>
+                <span className="char-count" style={{ fontSize: 12, color: '#8c8c8c' }}>
+                  {userInput.length} / 500
+                </span>
               )}
-            </div>
+              <ChartStyleSelector
+                value={chartStyle}
+                onChange={setChartStyle}
+                enableResearchMode={enableResearchMode}
+                onResearchModeChange={setEnableResearchMode}
+                selectedChartTypes={selectedChartTypes}
+                onChartTypesChange={setSelectedChartTypes}
+                agentMode={agentMode}
+                compact={true}
+              />
+            </Space>
+
+            {/* 右侧：发送按钮 */}
             <Space>
               {agentExecuting ? (
                 <Button
@@ -440,8 +376,9 @@ function ChatArea({ showPreview, onTogglePreview }) {
                   danger
                   icon={<StopOutlined />}
                   onClick={handleStop}
+                  size="middle"
                 >
-                  停止执行
+                  停止
                 </Button>
               ) : (
                 <Tooltip title="Shift+Enter 换行，Enter 发送">
@@ -450,7 +387,13 @@ function ChatArea({ showPreview, onTogglePreview }) {
                     icon={<SendOutlined />}
                     onClick={handleSubmit}
                     loading={inputLoading}
-                    disabled={!userInput.trim() || selectedColumns.length === 0}
+                    disabled={
+                      !userInput.trim() || 
+                      agentExecuting ||
+                      (uploadMode === 'single' && selectedColumns.length === 0) ||
+                      (uploadMode === 'multiple' && (!selectedTables || selectedTables.length === 0))
+                    }
+                    size="middle"
                   >
                     发送
                   </Button>
@@ -458,6 +401,7 @@ function ChatArea({ showPreview, onTogglePreview }) {
               )}
             </Space>
           </div>
+        </div>
         </div>
       </div>
     </div>

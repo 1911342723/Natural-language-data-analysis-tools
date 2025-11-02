@@ -22,6 +22,7 @@ function FileUpload() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [currentBatchFiles, setCurrentBatchFiles] = useState([])
+  const [currentGroupId, setCurrentGroupId] = useState(null) // 保存后端返回的真实 group_id
   const { 
     uploadMode, 
     setUploadMode, 
@@ -130,6 +131,11 @@ function FileUpload() {
         setUploadProgress(progress)
       })
       
+      // 保存后端返回的真实 group_id
+      if (response.data.group_id) {
+        setCurrentGroupId(response.data.group_id)
+      }
+      
       const newFiles = response.data.files.map((file, index) => ({
         ...file,
         localFile: files[index]
@@ -148,7 +154,14 @@ function FileUpload() {
   }
 
   const handleRemoveFile = (fileId) => {
-    setUploadedFiles(uploadedFiles.filter(f => f.file_id !== fileId))
+    const newFiles = uploadedFiles.filter(f => f.file_id !== fileId)
+    setUploadedFiles(newFiles)
+    
+    // 如果所有文件都被移除，清理 group_id
+    if (newFiles.length === 0) {
+      setCurrentGroupId(null)
+    }
+    
     message.info('已移除文件')
   }
 
@@ -158,9 +171,14 @@ function FileUpload() {
       return
     }
 
+    if (!currentGroupId) {
+      message.error('文件组 ID 未找到，请重新上传')
+      return
+    }
+
     try {
       const fileGroupData = {
-        group_id: `group_${Date.now()}`,
+        group_id: currentGroupId,  // 使用后端返回的真实 group_id
         files: uploadedFiles
       }
       
@@ -176,6 +194,7 @@ function FileUpload() {
     setUploadMode(mode)
     setUploadedFiles([])
     setCurrentBatchFiles([])
+    setCurrentGroupId(null)  // 清理 group_id
   }
 
   return (
