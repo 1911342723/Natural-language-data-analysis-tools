@@ -92,6 +92,10 @@ class SmartAnalysisAgent:
         """运行智能 Agent"""
         logger.info(f"🧠 智能 Agent 开始运行 (session: {self.session_id})")
         logger.info(f"📝 用户需求: {self.user_request}")
+        print(f"\n{'='*60}")
+        print(f"🧠 [智能模式] 开始运行")
+        print(f"📝 用户需求: {self.user_request}")
+        print(f"{'='*60}\n")
         
         try:
             # ====== 第1步：规划分析策略 ======
@@ -391,7 +395,12 @@ class SmartAnalysisAgent:
             if not session:
                 raise Exception(f"Session 不存在: {self.session_id}")
             
-            result = await session.execute_code(code, timeout=120)
+            result = await session.execute_code(code, timeout=60)
+            
+            print(f"📊 [智能模式] 代码执行完成:")
+            print(f"  - stdout: {len(result.get('stdout', []))} 项")
+            print(f"  - data: {len(result.get('data', []))} 项") 
+            print(f"  - error: {result.get('error')}")
             
             step.result = result
             
@@ -478,7 +487,7 @@ class SmartAnalysisAgent:
                 if not session:
                     raise Exception(f"Session 不存在: {self.session_id}")
                 
-                result = await session.execute_code(fixed_code, timeout=120)
+                result = await session.execute_code(fixed_code, timeout=60)
                 fix_step.result = result
                 
                 # 格式化修复步骤的输出
@@ -556,6 +565,7 @@ class SmartAnalysisAgent:
     def _extract_final_result(self):
         """提取所有分析步骤的最终结果（类似经典Agent）"""
         logger.info("📦 开始提取最终结果")
+        print(f"📦 [智能模式] 开始提取最终结果，共 {len(self.steps)} 个步骤")
         
         result = {
             'data': [],
@@ -565,9 +575,14 @@ class SmartAnalysisAgent:
         
         # 遍历所有步骤，收集结果
         for step in self.steps:
+            print(f"📦 [智能模式] 检查步骤: {step.title}, type={step.step_type}, has_result={step.result is not None}")
             # 只处理分析步骤和探索步骤（有实际执行结果的）
             if step.step_type in ['analysis', 'exploration'] and step.result:
                 exec_result = step.result
+                print(f"📦 [智能模式] 步骤 '{step.title}' 有结果:")
+                print(f"  - stdout: {len(exec_result.get('stdout', []))} 项")
+                print(f"  - data: {len(exec_result.get('data', []))} 项")
+                print(f"  - error: {exec_result.get('error')}")
                 
                 # 收集 stdout 文本输出
                 if exec_result.get('stdout'):
@@ -575,11 +590,14 @@ class SmartAnalysisAgent:
                     if full_text.strip():
                         result['text'].append(full_text)
                         logger.info(f"✅ 从步骤 '{step.title}' 提取到 stdout: {len(full_text)} 字符")
+                        print(f"✅ [智能模式] 提取到 stdout: {len(full_text)} 字符")
                 
                 # 收集图表和表格
                 if exec_result.get('data'):
-                    for data_item in exec_result['data']:
+                    print(f"📦 [智能模式] 开始处理 {len(exec_result['data'])} 个 data 项")
+                    for idx, data_item in enumerate(exec_result['data']):
                         data_content = data_item.get('data', data_item)
+                        print(f"  📦 data[{idx}] keys: {list(data_content.keys()) if isinstance(data_content, dict) else type(data_content)}")
                         
                         # 处理 HTML 表格
                         if 'text/html' in data_content:
@@ -589,6 +607,7 @@ class SmartAnalysisAgent:
                                 'content': html_content
                             })
                             logger.info(f"✅ 从步骤 '{step.title}' 提取到 HTML 表格")
+                            print(f"✅ [智能模式] 提取到 HTML 表格")
                         
                         # 处理图片
                         if 'image/png' in data_content:
@@ -598,6 +617,7 @@ class SmartAnalysisAgent:
                                 'data': data_content['image/png']
                             })
                             logger.info(f"✅ 从步骤 '{step.title}' 提取到图表")
+                            print(f"✅ [智能模式] 提取到图表")
         
         # 清理空数组
         if not result['data']:
@@ -611,7 +631,9 @@ class SmartAnalysisAgent:
         if not result:
             result['text'] = ["⚠️ 未捕获到输出，请检查代码是否有 print 语句或图表生成"]
             logger.warning("⚠️ result 为空，添加提示信息")
+            print(f"⚠️ [智能模式] result 为空，添加提示信息")
         
+        print(f"📦 [智能模式] 最终结果: charts={len(result.get('charts', []))}, data={len(result.get('data', []))}, text={len(result.get('text', []))}")
         logger.info(f"📦 最终结果提取完成: charts={len(result.get('charts', []))}, data={len(result.get('data', []))}, text={len(result.get('text', []))}")
         
         self.final_result = result
@@ -699,14 +721,16 @@ class SmartAnalysisAgent:
 **关键要求**：
 1. **直接使用已有的 df DataFrame，不要创建新数据或模拟数据**
 2. **必须生成图表！使用 matplotlib 或 seaborn**
-3. **不要使用 plt.show()，它会关闭图形！**
-4. **不要在代码最后使用 print()！最后一行应该是返回图表对象或数据**
-5. **推荐方式：使用 plt.gcf() 或直接让图表对象作为最后一行**
+3. **必须使用 IPython.display.Image 显示图表**（不要用 plt.show() 或 plt.gcf()）
+4. **可以使用 print() 输出文字分析结果**
+5. **图表必须通过 display(Image(buffer)) 方式显示**
 
 示例模式：
 ```python
 import matplotlib.pyplot as plt
 import seaborn as sns
+import io
+from IPython.display import Image, display
 
 # 数据处理
 data = df.groupby('字段').mean()
@@ -717,9 +741,15 @@ sns.barplot(data=data, ...)
 plt.title('标题')
 plt.tight_layout()
 
-# 重要：不要 plt.show()，让图表自然显示
-# 可以返回 figure 对象
-plt.gcf()  # 获取当前图形对象，作为最后一行
+# ✅ 正确方式：保存到 buffer 并使用 display()
+buf = io.BytesIO()
+plt.savefig(buf, format='png', dpi=80, bbox_inches='tight')
+buf.seek(0)
+plt.close()
+display(Image(buf.getvalue()))
+
+# 输出文字分析
+print("分析结果...")
 ```
 
 其他要求：
@@ -749,8 +779,16 @@ plt.gcf()  # 获取当前图形对象，作为最后一行
 
 **修复要求**：
 1. 直接使用已有的 df DataFrame，不要创建模拟数据
-2. 如果是图表代码，不要使用 plt.show()
-3. 代码最后一行应该是图表对象（如 plt.gcf()）或数据，不要是 print()
+2. 如果是图表代码，必须使用 `display(Image(buffer))` 显示图表
+3. 不要使用 `plt.show()` 或 `plt.gcf()`
+4. 图表保存示例：
+```python
+buf = io.BytesIO()
+plt.savefig(buf, format='png', dpi=80, bbox_inches='tight')
+buf.seek(0)
+plt.close()
+display(Image(buf.getvalue()))
+```
 
 直接返回修复后的完整代码，用```python```包裹。
 """
