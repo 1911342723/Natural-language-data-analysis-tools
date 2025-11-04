@@ -1,14 +1,64 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>智能数据分析工具</title>
+    <title>数据分析工具</title>
+    
+    <!-- 飞书远程调试工具 -->
+    <script src='https://lf-package-cn.feishucdn.com/obj/feishu-static/op/fe/devtools_frontend/remote-debug-0.0.1-alpha.6.js'></script>
+    
+    <!-- 飞书 JSSDK -->
+    <script src="https://lf-package-cn.feishucdn.com/obj/feishu-static/op/fe/jssdk/latest/jssdk.js"></script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- 临时测试脚本 -->
+    <script>
+      // 在控制台提供测试函数
+      window.testUpload = async function() {
+        console.log('=== 开始测试上传 ===');
+        console.log('Document.cookie:', document.cookie);
+        
+        // 创建一个测试文件
+        const testContent = 'name,age\nAlice,30\nBob,25';
+        const blob = new Blob([testContent], { type: 'text/csv' });
+        const file = new File([blob], 'test.csv', { type: 'text/csv' });
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        try {
+          console.log('发送 POST 请求...');
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',  // ⭐ 关键
+          });
+          
+          console.log('响应状态:', response.status);
+          const data = await response.json();
+          console.log('响应数据:', data);
+          
+          if (response.ok) {
+            console.log('✅ 上传成功！');
+            return data;
+          } else {
+            console.error('❌ 上传失败:', data);
+            return null;
+          }
+        } catch (error) {
+          console.error('❌ 请求失败:', error);
+          return null;
+        }
+      };
+      
+      console.log('💡 测试工具已加载！');
+      console.log('💡 在控制台输入: testUpload() 来测试上传');
+      console.log('💡 当前 cookies:', document.cookie);
+    </script>
   </body>
 </html>
-

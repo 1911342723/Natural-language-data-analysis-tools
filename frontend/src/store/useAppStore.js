@@ -1,10 +1,13 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 
 /**
  * 全局状态管理 Store
- * 使用 Zustand 轻量级状态管理
+ * 使用 Zustand 轻量级状态管理 + 持久化
  */
-const useAppStore = create((set, get) => ({
+const useAppStore = create(
+  persist(
+    (set, get) => ({
   // ========== 文件相关 ==========
   uploadMode: 'single', // 'single' | 'multiple'
   uploadedFile: null, // 单文件模式
@@ -171,10 +174,13 @@ const useAppStore = create((set, get) => ({
   chartStyle: 'publication', // 图表样式: 'publication' | 'presentation' | 'web'
   enableResearchMode: false, // 是否启用科研模式
   selectedChartTypes: [], // 用户选择的图表类型数组: ['boxplot', 'scatter', ...]
+  currentRequest: null, // 当前请求信息（用于恢复执行）: { sessionId, query, selectedColumns, agentMode, chartStyle, enableResearchMode, selectedChartTypes }
   
   setAgentExecuting: (executing) => set({ agentExecuting: executing }),
   
   setCurrentTaskId: (taskId) => set({ currentTaskId: taskId }),
+  
+  setCurrentRequest: (request) => set({ currentRequest: request }),
   
   setAgentMode: (mode) => set({ agentMode: mode }),
   setChartStyle: (style) => set({ chartStyle: style }),
@@ -244,6 +250,7 @@ const useAppStore = create((set, get) => ({
     agentExecuting: false,
     currentTaskId: null,
     agentSteps: [],
+    currentRequest: null,
     agentMode: 'classic',
     chartStyle: 'publication',
     enableResearchMode: false,
@@ -257,7 +264,47 @@ const useAppStore = create((set, get) => ({
     historySidebarVisible: false,
     showPreview: true,
   }),
-}))
+}),
+    {
+      name: 'data-analysis-store', // localStorage 中的 key
+      storage: createJSONStorage(() => localStorage),
+      // 只持久化关键数据，避免存储过大
+      partialize: (state) => ({
+        // 会话相关（持久化）
+        sessionId: state.sessionId,
+        conversations: state.conversations,
+        // 文件相关（持久化基本信息）
+        uploadMode: state.uploadMode,
+        fileData: state.fileData,
+        sheets: state.sheets,
+        currentSheetName: state.currentSheetName,
+        fileGroup: state.fileGroup,
+        selectedTables: state.selectedTables,
+        // 字段选择（持久化）
+        columns: state.columns,
+        selectedColumns: state.selectedColumns,
+        // Agent 设置（持久化）
+        agentMode: state.agentMode,
+        chartStyle: state.chartStyle,
+        enableResearchMode: state.enableResearchMode,
+        selectedChartTypes: state.selectedChartTypes,
+        // ⭐ Agent 执行状态（持久化，支持刷新后继续）
+        agentExecuting: state.agentExecuting,
+        currentTaskId: state.currentTaskId,
+        agentSteps: state.agentSteps,
+        currentRequest: state.currentRequest,
+        // UI 状态（持久化）
+        sidebarCollapsed: state.sidebarCollapsed,
+        showPreview: state.showPreview,
+        // 结果（持久化）
+        currentResult: state.currentResult,
+        // 以下不持久化
+        // historySidebarVisible: false,
+        // uploadedFile: null,
+      }),
+    }
+  )
+)
 
 export default useAppStore
 

@@ -36,7 +36,7 @@ import './ConversationList.css'
 const { Panel } = Collapse
 const { Text, Paragraph } = Typography
 
-function ConversationList({ agentExecuting = false }) {
+function ConversationList({ agentExecuting = false, user = null }) {
   const conversations = useAppStore((state) => state.conversations)
   const sessionId = useAppStore((state) => state.sessionId)
   const agentSteps = useAppStore((state) => state.agentSteps)
@@ -1219,19 +1219,29 @@ function ConversationList({ agentExecuting = false }) {
           className={`conversation-item ${conv.type === 'user' ? 'user-message' : 'agent-message'}`}
         >
           <div className="message-avatar">
-            <Avatar
-              icon={conv.type === 'user' ? <UserOutlined /> : <RobotOutlined />}
-              style={{
-                backgroundColor: conv.type === 'user' ? '#1677ff' : '#52c41a',
-              }}
-            />
+            {conv.type === 'user' ? (
+              <Avatar
+                src={user?.avatar_url}
+                icon={!user?.avatar_url && <UserOutlined />}
+                style={{
+                  backgroundColor: user?.avatar_url ? 'transparent' : '#1677ff',
+                }}
+              />
+            ) : (
+              <Avatar
+                icon={<RobotOutlined />}
+                style={{
+                  backgroundColor: '#52c41a',
+                }}
+              />
+            )}
           </div>
 
           <div className="message-content">
             <div className="message-header">
               <Space>
                 <span className="message-sender">
-                  {conv.type === 'user' ? '你' : 'AI Agent'}
+                  {conv.type === 'user' ? (user?.name || '你') : 'AI Agent'}
                 </span>
                 <span className="message-time">
                   {dayjs(conv.timestamp).format('HH:mm:ss')}

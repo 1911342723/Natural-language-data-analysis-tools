@@ -1,7 +1,7 @@
 """
 文件上传 API
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
 import logging
 from typing import List
@@ -9,6 +9,7 @@ import uuid
 
 from core.file_handler import file_handler
 from core.cache import file_cache
+from core.feishu_auth import get_current_user  # ⭐ 新增：登录验证
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,10 @@ router = APIRouter()
 
 
 @router.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user)  # ⭐ 需要登录
+):
     """
     上传文件并解析
     

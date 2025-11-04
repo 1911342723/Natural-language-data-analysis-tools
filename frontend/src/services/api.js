@@ -8,12 +8,17 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // ⭐ 重要：携带 cookie（用于 session 认证）
 })
 
 // 请求拦截器
 api.interceptors.request.use(
   (config) => {
-    // 可以在这里添加 token
+    // ⭐ 添加 token 到请求头（用于飞书客户端）
+    const token = localStorage.getItem('feishu_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
     return config
   },
   (error) => {
@@ -42,15 +47,25 @@ export const uploadFile = (file, onProgress) => {
   const formData = new FormData()
   formData.append('file', file)
   
-  return api.post('/upload', formData, {
+  console.log('🚀 上传文件配置：')
+  console.log('   api.defaults.withCredentials:', api.defaults.withCredentials)
+  console.log('   api.defaults.baseURL:', api.defaults.baseURL)
+  console.log('   Document.cookie:', document.cookie)
+  
+  const config = {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    withCredentials: true,  // ⭐ 显式设置，确保 FormData 请求也发送 cookie
     onUploadProgress: (progressEvent) => {
       const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
       onProgress?.(percentCompleted)
     },
-  })
+  }
+  
+  console.log('   请求配置:', config)
+  
+  return api.post('/upload', formData, config)
 }
 
 /**
@@ -66,6 +81,7 @@ export const uploadMultipleFiles = (files, onProgress) => {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    withCredentials: true,  // ⭐ 显式设置，确保 FormData 请求也发送 cookie
     timeout: 120000, // 多文件上传需要更长时间，120秒
     onUploadProgress: (progressEvent) => {
       const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
@@ -148,11 +164,20 @@ export const submitAnalysisStream = (
   
   const fetchSSE = async () => {
     try {
+      // ⭐ 添加 Authorization header（Token 认证）
+      const token = localStorage.getItem('feishu_token');
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
+        credentials: 'include', // 保留 cookie 认证（兼容浏览器）
         body: JSON.stringify({
           session_id: sessionId,
           user_request: userRequest,

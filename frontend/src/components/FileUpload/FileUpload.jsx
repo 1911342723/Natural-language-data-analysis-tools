@@ -10,7 +10,7 @@ import {
   CloudUploadOutlined,
   FileTextOutlined
 } from '@ant-design/icons'
-import { uploadFile, uploadMultipleFiles } from '@/services/api'
+import { uploadFile, uploadMultipleFiles, createSession, createMultiSession } from '@/services/api'
 import useAppStore from '@/store/useAppStore'
 import './FileUpload.css'
 
@@ -29,7 +29,10 @@ function FileUpload() {
     setUploadedFile, 
     setFileData, 
     setColumns,
-    setFileGroup 
+    setFileGroup,
+    setSessionId,
+    selectedColumns,
+    currentSheetName
   } = useAppStore()
 
   const handleUpload = async (file) => {
@@ -65,9 +68,25 @@ function FileUpload() {
       const firstSheet = response.data.sheets?.[0]
       if (firstSheet) {
         setColumns(firstSheet.columns || [])
+        
+        // ⭐ 上传成功后立即创建 Session（使用第一个工作表的所有字段）
+        try {
+          console.log('📝 文件上传成功，创建 Session...')
+          const sessionRes = await createSession(
+            response.data.file_id, 
+            firstSheet.sheet_name, 
+            firstSheet.columns || []
+          )
+          setSessionId(sessionRes.data.session_id)
+          console.log('✅ Session 创建成功:', sessionRes.data.session_id)
+          message.success('文件上传成功，环境已就绪')
+        } catch (sessionError) {
+          console.error('创建 Session 失败:', sessionError)
+          message.warning('文件上传成功，但环境初始化失败，将在首次分析时重试')
+        }
+      } else {
+        message.success('文件上传成功')
       }
-      
-      message.success('文件上传成功')
     } catch (error) {
       console.error('上传失败:', error)
       message.error('文件上传失败，请重试')

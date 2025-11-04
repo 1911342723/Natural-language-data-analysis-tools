@@ -1,0 +1,322 @@
+/**
+ * 飞书网页应用样式文件
+ */
+
+/* 全局样式重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* 容器 */
+.container {
+  max-width: 800px;
+  width: 100%;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+/* 头部 */
+.header {
+  background: linear-gradient(135deg, #0089ff 0%, #0066cc 100%);
+  color: white;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.header-icon {
+  margin-bottom: 15px;
+}
+
+.header h1 {
+  font-size: 32px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+  font-weight: 300;
+}
+
+/* 主内容区 */
+.main-content {
+  padding: 30px;
+}
+
+/* 加载状态 */
+.loading {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 20px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #0089ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading p {
+  color: #666;
+  font-size: 16px;
+}
+
+/* 错误消息 */
+.error-message {
+  background: #fff3f3;
+  border: 1px solid #ffccc7;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+
+.error-message p {
+  color: #d32f2f;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* 用户信息卡片 */
+.user-info {
+  margin-bottom: 30px;
+}
+
+.user-info h2 {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #0089ff;
+}
+
+.info-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.info-item {
+  padding: 15px 0;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item label {
+  font-weight: 600;
+  color: #666;
+  min-width: 100px;
+  font-size: 14px;
+}
+
+.info-item span {
+  color: #333;
+  font-size: 15px;
+  flex: 1;
+}
+
+.info-item span.code {
+  font-family: "Courier New", monospace;
+  background: #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+/* 头像容器 */
+.avatar-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.user-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 4px solid #0089ff;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 按钮 */
+.action-buttons {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.btn {
+  padding: 12px 30px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #0089ff 0%, #0066cc 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 137, 255, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 137, 255, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* 信息说明区 */
+.info-section {
+  background: #f0f7ff;
+  border-left: 4px solid #0089ff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.info-section h3 {
+  font-size: 18px;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.info-section ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.info-section li {
+  padding: 8px 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+  position: relative;
+  padding-left: 20px;
+}
+
+.info-section li:before {
+  content: "•";
+  color: #0089ff;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+/* 页脚 */
+.footer {
+  background: #f8f9fa;
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+
+  .container {
+    border-radius: 15px;
+  }
+
+  .header {
+    padding: 30px 15px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .main-content {
+    padding: 20px 15px;
+  }
+
+  .user-info h2 {
+    font-size: 20px;
+  }
+
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .info-item label {
+    margin-bottom: 5px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+  }
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-info,
+.info-section {
+  animation: fadeIn 0.5s ease-out;
+}
+
+

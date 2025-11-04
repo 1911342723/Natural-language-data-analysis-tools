@@ -1,0 +1,16 @@
+# 飞书网页应用 Python 依赖包
+
+# Web 框架
+Flask==2.3.0
+flask-cors==4.0.0
+
+# HTTP 请求库
+requests==2.31.0
+
+# 环境变量管理
+python-dotenv==1.0.0
+
+# WSGI 服务器（生产环境使用）
+gunicorn==21.2.0
+
+

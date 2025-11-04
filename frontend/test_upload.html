@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>上传测试</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>文件上传测试</h1>
+    <input type="file" id="fileInput" />
+    <button onclick="testUpload()">测试上传</button>
+    <div id="result"></div>
+
+    <script>
+        async function testUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('请先选择文件');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                console.log('开始上传...');
+                console.log('文件:', file.name);
+                
+                const response = await fetch('http://127.0.0.1:8000/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include',  // ⭐ 关键：发送 cookie
+                });
+
+                console.log('响应状态:', response.status);
+                console.log('响应头:', [...response.headers.entries()]);
+
+                const data = await response.json();
+                console.log('响应数据:', data);
+
+                document.getElementById('result').innerHTML = 
+                    '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+
+            } catch (error) {
+                console.error('上传失败:', error);
+                document.getElementById('result').innerHTML = 
+                    '<pre style="color: red;">错误: ' + error.message + '</pre>';
+            }
+        }
+
+        // 测试当前登录状态
+        async function checkLogin() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/auth/current_user', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                console.log('当前登录用户:', data);
+                return data;
+            } catch (error) {
+                console.error('检查登录失败:', error);
+                return null;
+            }
+        }
+
+        // 页面加载时检查登录
+        window.onload = async () => {
+            const user = await checkLogin();
+            if (user && user.name) {
+                document.body.innerHTML = '<h2>已登录: ' + user.name + '</h2>' + document.body.innerHTML;
+            } else {
+                document.body.innerHTML = '<h2 style="color: red;">未登录！请先访问 http://127.0.0.1:3000 登录</h2>' + document.body.innerHTML;
+            }
+        };
+    </script>
+</body>
+</html>
+
+

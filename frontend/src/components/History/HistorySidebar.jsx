@@ -15,7 +15,9 @@ import {
   DeleteOutlined, 
   SearchOutlined,
   ClockCircleOutlined,
-  FileTextOutlined 
+  FileTextOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined
 } from '@ant-design/icons'
 import { getHistoryList, deleteHistory } from '@/services/api'
 import dayjs from 'dayjs'
@@ -33,9 +35,14 @@ function HistorySidebar({ visible, onClose }) {
     setLoading(true)
     try {
       const response = await getHistoryList()
-      setHistoryList(response.data || [])
+      console.log('📋 历史记录数据:', response)
+      const items = response.data?.items || response.data || []
+      setHistoryList(items)
+      console.log('✅ 历史记录加载成功，共', items.length, '条')
     } catch (error) {
-      console.error('加载历史记录失败:', error)
+      console.error('❌ 加载历史记录失败:', error)
+      message.error('加载历史记录失败')
+      setHistoryList([])
     } finally {
       setLoading(false)
     }
@@ -84,10 +91,26 @@ function HistorySidebar({ visible, onClose }) {
         />
 
         {/* 历史记录列表 */}
-        {filteredHistory.length === 0 ? (
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Space direction="vertical" size="middle">
+              <ClockCircleOutlined style={{ fontSize: 48, color: '#1677ff' }} spin />
+              <p style={{ color: '#8c8c8c' }}>加载中...</p>
+            </Space>
+          </div>
+        ) : filteredHistory.length === 0 ? (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="暂无历史记录"
+            description={
+              <Space direction="vertical" size="small">
+                <span>{searchText ? '没有找到相关记录' : '暂无历史记录'}</span>
+                {!searchText && (
+                  <span style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                    开始你的第一次数据分析吧
+                  </span>
+                )}
+              </Space>
+            }
           />
         ) : (
           <List
@@ -121,17 +144,28 @@ function HistorySidebar({ visible, onClose }) {
 
                 <div className="history-card-content">
                   <p className="request-text">
-                    {item.user_request?.substring(0, 100)}
-                    {item.user_request?.length > 100 && '...'}
+                    {item.user_request?.substring(0, 150)}
+                    {item.user_request?.length > 150 && '...'}
                   </p>
                   
                   <Space size={4} wrap>
-                    <Tag color="blue" style={{ fontSize: '11px' }}>
-                      {item.selected_columns?.length || 0} 个字段
-                    </Tag>
-                    {item.success && (
-                      <Tag color="success" style={{ fontSize: '11px' }}>
+                    {item.success ? (
+                      <Tag color="success" icon={<CheckCircleOutlined />} style={{ fontSize: '11px' }}>
                         成功
+                      </Tag>
+                    ) : (
+                      <Tag color="error" icon={<CloseCircleOutlined />} style={{ fontSize: '11px' }}>
+                        失败
+                      </Tag>
+                    )}
+                    {item.execution_time && (
+                      <Tag color="default" style={{ fontSize: '11px' }}>
+                        {item.execution_time.toFixed(2)}s
+                      </Tag>
+                    )}
+                    {item.session_id && (
+                      <Tag color="blue" style={{ fontSize: '11px' }}>
+                        Session: {item.session_id.substring(0, 8)}
                       </Tag>
                     )}
                   </Space>
@@ -141,7 +175,7 @@ function HistorySidebar({ visible, onClose }) {
                   <Space size={4}>
                     <ClockCircleOutlined style={{ fontSize: '12px', color: '#8c8c8c' }} />
                     <span className="time-text">
-                      {dayjs(item.created_at).format('MM-DD HH:mm')}
+                      {dayjs(item.created_at).format('YYYY-MM-DD HH:mm:ss')}
                     </span>
                   </Space>
                 </div>

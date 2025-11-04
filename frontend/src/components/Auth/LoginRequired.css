@@ -1,0 +1,305 @@
+/* ==================== 登录页面 - 黑白简约设计 ==================== */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 背景装饰动画 */
+.login-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.login-bg-shape {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.02);
+  animation: float 20s ease-in-out infinite;
+}
+
+.shape-1 {
+  width: 300px;
+  height: 300px;
+  top: -150px;
+  left: -150px;
+  animation-delay: 0s;
+}
+
+.shape-2 {
+  width: 400px;
+  height: 400px;
+  top: 50%;
+  right: -200px;
+  animation-delay: 5s;
+}
+
+.shape-3 {
+  width: 250px;
+  height: 250px;
+  bottom: -125px;
+  left: 30%;
+  animation-delay: 10s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(20px, 20px) rotate(90deg);
+  }
+  50% {
+    transform: translate(-20px, 40px) rotate(180deg);
+  }
+  75% {
+    transform: translate(40px, -20px) rotate(270deg);
+  }
+}
+
+/* 登录卡片 */
+.login-card {
+  background: white;
+  border-radius: 24px;
+  padding: 48px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e6eb;
+  position: relative;
+  z-index: 1;
+  animation: cardSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Logo 和标题 */
+.login-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+
+@keyframes logoFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.login-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+}
+
+.login-subtitle {
+  font-size: 14px;
+  color: #8f959e;
+  margin: 0;
+}
+
+/* 登录内容 */
+.login-body {
+  margin-bottom: 32px;
+}
+
+.login-welcome {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.login-welcome h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f2329;
+  margin: 0 0 8px 0;
+}
+
+.login-welcome p {
+  font-size: 15px;
+  color: #646a73;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* 飞书登录按钮 */
+.feishu-login-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.feishu-login-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.feishu-login-btn:hover::before {
+  left: 100%;
+}
+
+.feishu-login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: #2a2a2a;
+}
+
+.feishu-login-btn:active {
+  transform: translateY(0);
+}
+
+.feishu-icon {
+  flex-shrink: 0;
+}
+
+.arrow-icon {
+  flex-shrink: 0;
+  transition: transform 0.3s;
+}
+
+.feishu-login-btn:hover .arrow-icon {
+  transform: translateX(4px);
+}
+
+/* 登录模式提示 */
+.login-mode-hint {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 13px;
+  color: #8f959e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1a1a1a;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-dot.browser {
+  background: #5a5a5a;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.9);
+  }
+}
+
+/* 底部提示 */
+.login-footer {
+  text-align: center;
+  padding-top: 24px;
+  border-top: 1px solid #e5e6eb;
+}
+
+.login-footer p {
+  font-size: 13px;
+  color: #8f959e;
+  margin: 8px 0;
+}
+
+.security-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #5a5a5a !important;
+  font-weight: 500;
+}
+
+.security-hint svg {
+  color: #5a5a5a;
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 768px) {
+  .login-card {
+    padding: 32px 24px;
+    border-radius: 20px;
+  }
+
+  .login-header h1 {
+    font-size: 24px;
+  }
+
+  .login-welcome h2 {
+    font-size: 20px;
+  }
+
+  .login-welcome p {
+    font-size: 14px;
+  }
+
+  .feishu-login-btn {
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 24px 20px;
+  }
+
+  .login-header {
+    margin-bottom: 32px;
+  }
+
+  .login-body {
+    margin-bottom: 24px;
+  }
+}
+

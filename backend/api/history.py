@@ -1,7 +1,7 @@
 """
 历史记录 API
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
@@ -9,6 +9,8 @@ from typing import Optional
 import logging
 
 from core.database import get_db, AnalysisHistory
+from core.feishu_auth import get_current_user
+from core.feishu_db import db as feishu_db
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +21,10 @@ router = APIRouter()
 async def get_history_list(
     page: int = 1,
     page_size: int = 20,
-    db: AsyncSession = Depends(get_db)
+    user: dict = Depends(get_current_user)
 ):
     """
-    获取历史记录列表
+    获取当前用户的历史记录列表（从飞书数据库）
     
     参数：
     - page: 页码（从1开始）
@@ -40,22 +42,17 @@ async def get_history_list(
     }
     """
     try:
-        # 查询总数
-        count_query = select(AnalysisHistory)
-        result = await db.execute(count_query)
-        total = len(result.scalars().all())
+        user_id = user["open_id"]
         
-        # 分页查询
-        offset = (page - 1) * page_size
-        query = (
-            select(AnalysisHistory)
-            .order_by(AnalysisHistory.created_at.desc())
-            .offset(offset)
-            .limit(page_size)
+        # 从飞书数据库获取用户历史记录（异步）
+        history_list = await feishu_db.get_user_analysis_history_async(
+            user_id=user_id,
+            limit=page_size,
+            offset=(page - 1) * page_size
         )
         
-        result = await db.execute(query)
-        items = result.scalars().all()
+        # 获取总数（异步）
+        total = await feishu_db.get_user_analysis_count_async(user_id)
         
         return JSONResponse({
             "success": True,
@@ -63,7 +60,7 @@ async def get_history_list(
                 "total": total,
                 "page": page,
                 "page_size": page_size,
-                "items": [item.to_dict() for item in items]
+                "items": history_list
             }
         })
     
@@ -101,22 +98,27 @@ async def get_history_detail(
 @router.delete("/history/{history_id}")
 async def delete_history_record(
     history_id: int,
-    db: AsyncSession = Depends(get_db)
+    user: dict = Depends(get_current_user)
 ):
-    """删除历史记录"""
+    """删除历史记录（仅删除当前用户的记录）"""
     try:
-        query = delete(AnalysisHistory).where(AnalysisHistory.id == history_id)
-        await db.execute(query)
-        await db.commit()
+        user_id = user["open_id"]
+        
+        # 从飞书数据库删除记录（异步，会验证是否属于当前用户）
+        success = await feishu_db.delete_analysis_record_async(history_id, user_id)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="记录不存在或无权删除")
         
         return JSONResponse({
             "success": True,
             "message": "删除成功"
         })
     
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"删除历史记录失败: {e}")
-        await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
 

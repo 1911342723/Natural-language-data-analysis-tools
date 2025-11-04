@@ -1,0 +1,31 @@
+/* 飞书登录按钮样式 */
+.feishu-login-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #0089ff 0%, #0066cc 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 137, 255, 0.3);
+}
+
+.feishu-login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 137, 255, 0.4);
+}
+
+.feishu-login-btn:active {
+  transform: translateY(0);
+}
+
+.feishu-login-btn svg {
+  opacity: 0.9;
+}
+
+

@@ -10,6 +10,11 @@ import FieldSelector from '../FieldSelector/FieldSelector'
 import MultiFileTableSelector from '../MultiFileTableSelector/MultiFileTableSelector'
 import WorkArea from '../WorkArea/WorkArea'
 import HistorySidebar from '../History/HistorySidebar'
+import FeishuUserNav from '../Feishu/FeishuUserNav'  // ⭐ 新增
+import FeishuLoading from '../Feishu/FeishuLoading'  // ⭐ 新增
+import FeishuLoginButton from '../Feishu/FeishuLoginButton'  // ⭐ 新增
+import { useFeishuAuth } from '@/hooks/useFeishuAuth'  // ⭐ 新增
+import { useEffect } from 'react'  // ⭐ 新增
 import './MainLayout.css'
 
 const { Header, Sider, Content } = Layout
@@ -25,6 +30,9 @@ function MainLayout() {
     uploadMode,
     resetAll,
   } = useAppStore()
+
+  // ⭐ 新增：飞书认证
+  const { user, loading, login, logout, isFeishuEnv } = useFeishuAuth()
 
   // 判断是否有数据（单文件或多文件）
   const hasData = uploadMode === 'multiple' ? fileGroup : fileData
@@ -49,6 +57,25 @@ function MainLayout() {
     }
   }
 
+  // ⭐ 新增：检查登录状态，未登录跳转到 /login
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log('⚠️ 未登录，跳转到登录页');
+      window.location.href = '/login';
+    }
+  }, [loading, user]);
+
+  // 加载中
+  if (loading) {
+    return <FeishuLoading />;
+  }
+
+  // 未登录（等待跳转）
+  if (!user) {
+    return <FeishuLoading />;
+  }
+
+  // 已登录，显示主应用
   return (
     <Layout className="main-layout">
       {/* 顶部导航栏 */}
@@ -65,6 +92,17 @@ function MainLayout() {
               onClick={() => setHistorySidebarVisible(true)}
             />
           </Tooltip>
+          
+          {/* ⭐ 新增：飞书登录/用户导航 */}
+          {user ? (
+            <FeishuUserNav user={user} onLogout={logout} />
+          ) : isFeishuEnv ? (
+            <FeishuLoginButton onClick={login} />
+          ) : (
+            <Tooltip title="请在飞书客户端中打开">
+              <FeishuLoginButton onClick={() => alert('请在飞书客户端中打开此应用')} />
+            </Tooltip>
+          )}
         </div>
       </Header>
 

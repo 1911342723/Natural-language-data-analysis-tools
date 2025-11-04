@@ -1,7 +1,7 @@
 """
 Agent 分析 API
 """
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any, AsyncGenerator
@@ -13,6 +13,8 @@ import logging
 from core.agent import AnalysisAgent
 from core.smart_agent import SmartAnalysisAgent
 from core.file_handler import file_handler
+from core.feishu_auth import get_current_user  # ⭐ 新增：登录验证
+from core.feishu_db import db  # ⭐ 新增：数据库
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -96,7 +98,8 @@ async def run_agent_task(
 @router.post("/agent/analyze")
 async def submit_analysis(
     request: AnalyzeRequest,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    user: dict = Depends(get_current_user)  # ⭐ 需要登录
 ):
     """
     提交分析请求
@@ -196,7 +199,10 @@ async def submit_analysis(
 
 
 @router.get("/agent/status/{task_id}")
-async def get_agent_status(task_id: str):
+async def get_agent_status(
+    task_id: str,
+    user: dict = Depends(get_current_user)  # ⭐ 需要登录
+):
     """
     获取 Agent 执行状态（轮询）
     
@@ -253,7 +259,10 @@ async def stop_agent(task_id: str):
 
 
 @router.post("/agent/analyze-stream")
-async def analyze_stream(request: AnalyzeRequest):
+async def analyze_stream(
+    request: AnalyzeRequest,
+    user: dict = Depends(get_current_user)  # ⭐ 需要登录
+):
     """
     流式分析（SSE）- 实时推送 Agent 执行状态
     

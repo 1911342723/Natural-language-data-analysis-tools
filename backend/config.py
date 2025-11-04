@@ -57,6 +57,15 @@ class Settings(BaseSettings):
     enable_code_sandbox: bool = Field(default=False, alias="ENABLE_CODE_SANDBOX")
     docker_image: str = Field(default="python:3.11-slim", alias="DOCKER_IMAGE")
     
+    # 飞书配置 ⭐ 新增
+    feishu_app_id: str = Field(default="", alias="FEISHU_APP_ID")
+    feishu_app_secret: str = Field(default="", alias="FEISHU_APP_SECRET")
+    feishu_host: str = Field(default="https://open.feishu.cn", alias="FEISHU_HOST")
+    
+    # Session 配置 ⭐ 新增
+    session_secret_key: str = Field(default="your-secret-key-change-this", alias="SESSION_SECRET_KEY")
+    session_max_age: int = Field(default=86400, alias="SESSION_MAX_AGE")  # 24小时
+    
     class Config:
         env_file = ".env"
         case_sensitive = False

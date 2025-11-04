@@ -44,6 +44,13 @@ pydantic-settings>=2.6.0
 # 文件处理
 aiofiles>=24.0.0
 
+# 飞书集成 ⭐ 新增
+requests>=2.31.0
+itsdangerous>=2.1.0
+
+# Session 支持 ⭐ 新增
+starlette-session>=0.4.0
+
 # 安全（可选）
 # python-jose[cryptography]>=3.3.0
 # passlib[bcrypt]>=1.7.0

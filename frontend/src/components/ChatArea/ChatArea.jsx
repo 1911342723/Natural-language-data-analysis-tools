@@ -22,11 +22,13 @@ import useAppStore from '@/store/useAppStore'
 import { submitAnalysisStream, createSession, createMultiSession } from '@/services/api'
 import ConversationList from './ConversationList'
 import ChartStyleSelector from './ChartStyleSelector'
+import { useFeishuAuth } from '@/hooks/useFeishuAuth'
 import './ChatArea.css'
 
 const { TextArea } = Input
 
 function ChatArea({ showPreview, onTogglePreview }) {
+  const { user } = useFeishuAuth()
   const {
     uploadMode,
     selectedColumns,
@@ -35,6 +37,8 @@ function ChatArea({ showPreview, onTogglePreview }) {
     agentExecuting,
     setAgentExecuting,
     setCurrentTaskId,
+    currentRequest,
+    setCurrentRequest,
     addConversation,
     clearAgentSteps,
     addAgentStep,
@@ -101,6 +105,79 @@ function ChatArea({ showPreview, onTogglePreview }) {
       return () => clearTimeout(timer)
     }
   }, [agentExecuting, agentSteps, isNearBottom])
+
+  // ⭐ 新增：页面加载时检查是否有正在执行的任务，如果有就恢复执行
+  useEffect(() => {
+    if (agentExecuting && currentRequest && !cancelStreamRef.current) {
+      console.log('检测到正在执行的任务，恢复执行...', currentRequest)
+      
+      // 重新建立 SSE 连接
+      const resumeExecution = () => {
+        const cancelStream = submitAnalysisStream(
+          currentRequest.sessionId,
+          currentRequest.query,
+          currentRequest.selectedColumns || [],
+          currentRequest.agentMode,
+          // onStep
+          (step, stepIndex) => {
+            if (typeof stepIndex === 'number') {
+              const currentSteps = useAppStore.getState().agentSteps
+              if (stepIndex < currentSteps.length) {
+                updateAgentStep(stepIndex, step)
+              } else {
+                addAgentStep(step)
+              }
+            } else {
+              addAgentStep(step)
+            }
+          },
+          // onComplete
+          (result) => {
+            console.log('✅ 恢复的任务执行完成')
+            setAgentExecuting(false)
+            setCurrentRequest(null) // 清除请求信息
+            
+            if (result.data && result.data.result) {
+              setCurrentResult(result.data.result)
+            }
+            
+            addConversation({
+              type: 'agent',
+              content: '✅ 分析完成！',
+              timestamp: new Date(),
+              steps: result.data?.steps || [],
+              result: result.data?.result,
+              summary: result.data?.summary,
+            })
+            
+            message.success('分析完成！')
+          },
+          // onError
+          (error) => {
+            console.error('❌ 恢复的任务执行失败:', error)
+            setAgentExecuting(false)
+            setCurrentRequest(null) // 清除请求信息
+            
+            addConversation({
+              type: 'agent',
+              content: `❌ 分析失败：${error.message}`,
+              timestamp: new Date(),
+            })
+            
+            message.error('分析失败')
+          },
+          currentRequest.chartStyle,
+          currentRequest.enableResearchMode,
+          currentRequest.selectedChartTypes
+        )
+        
+        cancelStreamRef.current = cancelStream
+        console.log('✅ SSE 连接已恢复')
+      }
+      
+      resumeExecution()
+    }
+  }, []) // 只在组件挂载时执行一次
 
   // 提交分析需求（使用流式 SSE）
   const handleSubmit = async () => {
@@ -174,6 +251,17 @@ function ChatArea({ showPreview, onTogglePreview }) {
       clearAgentSteps()
       setInputLoading(false)
 
+      // ⭐ 保存当前请求信息（用于刷新后恢复）
+      setCurrentRequest({
+        sessionId: currentSessionId,
+        query: currentInput,
+        selectedColumns: uploadMode === 'multiple' ? [] : selectedColumns,
+        agentMode,
+        chartStyle,
+        enableResearchMode,
+        selectedChartTypes,
+      })
+
       // 使用流式 SSE
       const cancelStream = submitAnalysisStream(
         currentSessionId,
@@ -217,6 +305,7 @@ function ChatArea({ showPreview, onTogglePreview }) {
         (result) => {
           
           setAgentExecuting(false)
+          setCurrentRequest(null) // ⭐ 清除请求信息
           
           // 保存最终结果
           if (result.data && result.data.result) {
@@ -239,6 +328,7 @@ function ChatArea({ showPreview, onTogglePreview }) {
         (error) => {
           console.error('❌ Agent 执行失败:', error)
           setAgentExecuting(false)
+          setCurrentRequest(null) // ⭐ 清除请求信息
           
           addConversation({
             type: 'agent',
@@ -272,6 +362,7 @@ function ChatArea({ showPreview, onTogglePreview }) {
       cancelStreamRef.current = null
     }
     setAgentExecuting(false)
+    setCurrentRequest(null) // ⭐ 清除请求信息
     message.info('已停止执行')
   }
 
@@ -292,7 +383,7 @@ function ChatArea({ showPreview, onTogglePreview }) {
     <div className="chat-area-container">
       {/* 对话历史区域（包含Agent思考过程）*/}
       <div className="conversation-area" ref={conversationAreaRef}>
-        <ConversationList agentExecuting={agentExecuting} />
+        <ConversationList agentExecuting={agentExecuting} user={user} />
         <div ref={chatEndRef} />
       </div>
 
