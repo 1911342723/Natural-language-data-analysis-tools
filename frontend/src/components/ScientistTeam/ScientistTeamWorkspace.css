@@ -1,0 +1,473 @@
+/* 科学家团队工作区 - 群聊模式 */
+.scientist-team-workspace-group {
+  display: flex;
+  height: 100%;
+  background: #f5f5f5;
+}
+
+/* ==================== 左侧团队成员面板 ==================== */
+.team-members-panel {
+  width: 280px;
+  background: #ffffff;
+  border-right: 1px solid #e8e8e8;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.members-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.member-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: #fafafa;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.member-card:hover {
+  background: #f0f0f0;
+}
+
+.member-card.active {
+  background: #e6f7ff;
+  border-color: #1890ff;
+}
+
+.member-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 4px;
+}
+
+.member-desc {
+  font-size: 12px;
+  color: #8c8c8c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.active-badge {
+  color: #52c41a;
+  font-size: 18px;
+}
+
+.empty-members {
+  padding: 40px 20px;
+  text-align: center;
+  color: #8c8c8c;
+}
+
+/* ==================== 右侧对话区域（复用ChatArea样式）==================== */
+.team-chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #f9fafb;
+  position: relative;
+}
+
+.conversation-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  padding-bottom: 180px;
+  background: transparent;
+  scroll-behavior: smooth;
+  position: relative; /* 为新消息提示按钮定位 */
+}
+
+/* 自定义滚动条 */
+.conversation-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.conversation-area::-webkit-scrollbar-track {
+  background: #f5f5f5;
+}
+
+.conversation-area::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 4px;
+}
+
+.conversation-area::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* 空状态 */
+.empty-chat {
+  text-align: center;
+  padding: 80px 20px;
+  color: #8c8c8c;
+}
+
+.empty-chat h3 {
+  font-size: 18px;
+  color: #262626;
+  margin-bottom: 8px;
+}
+
+/* ==================== 群聊消息样式 ==================== */
+.group-message {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.group-message.user-message {
+  flex-direction: row-reverse;
+}
+
+.message-content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+}
+
+.user-message .message-content-wrapper {
+  align-items: flex-end;
+}
+
+.message-sender-name {
+  font-size: 13px;
+  color: #8c8c8c;
+  margin-bottom: 6px;
+  padding: 0 4px;
+}
+
+.message-bubble {
+  background: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  line-height: 1.6;
+  font-size: 14px;
+  color: #262626;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.user-message .message-bubble {
+  background: #1890ff;
+  color: #ffffff;
+}
+
+.message-time {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-top: 4px;
+  padding: 0 4px;
+}
+
+.message-attachments {
+  margin-top: 8px;
+}
+
+/* ==================== 输入区域（复用ChatArea样式）==================== */
+.input-area-fixed {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.input-area-content {
+  width: 100%;
+  max-width: 800px;
+  pointer-events: auto;
+}
+
+.uploaded-files-tags {
+  margin-bottom: 12px;
+  background: transparent;
+  padding: 0;
+}
+
+.input-controls {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.message-textarea {
+  flex: 1;
+}
+
+.message-textarea .ant-input {
+  border: 1px solid #d9d9d9;
+  font-size: 14px;
+  resize: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.message-textarea .ant-input:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+.input-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ==================== 成员选择对话框 ==================== */
+.member-selector {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.member-option {
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: background 0.3s;
+}
+
+.member-option:hover {
+  background: #f5f5f5;
+}
+
+.member-option .ant-checkbox-wrapper {
+  width: 100%;
+}
+
+/* ==================== 流式输出样式 ==================== */
+.streaming-indicator {
+  font-size: 12px;
+  color: #1890ff;
+  font-weight: normal;
+}
+
+.cursor-blink {
+  animation: blink 1s infinite;
+  color: #1890ff;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+.group-message.streaming .message-bubble {
+  background: linear-gradient(90deg, #ffffff 0%, #f0f7ff 100%);
+  border-left: 3px solid #1890ff;
+}
+
+/* ==================== Markdown渲染样式 ==================== */
+.markdown-content {
+  white-space: normal;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.markdown-content h1 {
+  font-size: 1.5em;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.markdown-content h2 {
+  font-size: 1.3em;
+}
+
+.markdown-content h3 {
+  font-size: 1.1em;
+}
+
+.markdown-content p {
+  margin-bottom: 8px;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-left: 20px;
+  margin-bottom: 8px;
+}
+
+.markdown-content li {
+  margin-bottom: 4px;
+}
+
+.markdown-content code {
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.markdown-content pre {
+  background: #1e1e1e;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 8px 0;
+  overflow-x: auto;
+}
+
+.markdown-content pre code {
+  background: transparent;
+  padding: 0;
+  color: #d4d4d4;
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid #1890ff;
+  padding-left: 12px;
+  margin: 8px 0;
+  color: #666;
+  font-style: italic;
+}
+
+.markdown-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 8px 0;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.markdown-content th {
+  background-color: #f5f5f5;
+  font-weight: 600;
+}
+
+.markdown-content a {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+/* ==================== 新消息提示按钮 ==================== */
+.new-messages-indicator {
+  position: absolute;
+  bottom: 200px; /* 在输入框上方 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.new-messages-indicator button {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-weight: 500;
+}
+
+.new-messages-indicator button:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
+}
+
+/* ==================== 响应式 ==================== */
+@media (max-width: 768px) {
+  .team-members-panel {
+    width: 240px;
+  }
+  
+  .conversation-area {
+    padding: 16px;
+    padding-bottom: 180px;
+  }
+  
+  .message-content-wrapper {
+    max-width: 100%;
+  }
+  
+  .new-messages-indicator {
+    bottom: 180px;
+  }
+}

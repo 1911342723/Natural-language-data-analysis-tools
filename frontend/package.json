@@ -15,6 +15,7 @@
     "ahooks": "^3.8.1",
     "antd": "^5.21.0",
     "axios": "^1.7.7",
+    "dagre": "^0.8.5",
     "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
     "html2pdf.js": "^0.12.1",
@@ -23,10 +24,13 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^9.0.1",
+    "react-router-dom": "^6.26.0",
     "react-syntax-highlighter": "^16.1.0",
+    "reactflow": "^11.10.4",
     "recharts": "^2.12.7",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
+    "uuid": "^9.0.1",
     "zustand": "^4.5.5"
   },
   "devDependencies": {

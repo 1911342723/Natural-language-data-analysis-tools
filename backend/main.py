@@ -7,8 +7,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import os
 
+import sys
+from pathlib import Path
+
+# 添加backend目录到Python路径
+backend_dir = Path(__file__).parent
+sys.path.insert(0, str(backend_dir))
+
 from config import settings
 from api import router
+from api.workflow import router as workflow_router
+from api.file_upload import router as file_upload_router
 from core.database import init_db
 
 
@@ -45,6 +54,8 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(router, prefix="/api")
+app.include_router(workflow_router)  # workflow路由已经包含/api/workflow前缀
+app.include_router(file_upload_router)  # 文件上传路由，包含/api/team前缀
 
 
 @app.get("/")

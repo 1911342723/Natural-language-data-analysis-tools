@@ -4,12 +4,45 @@ AI Prompt 模板
 from typing import List, Dict, Any, Optional
 
 
+def build_conversation_context(conversation_history: List[Dict[str, str]]) -> str:
+    """
+    构建对话历史的上下文信息
+    
+    Args:
+        conversation_history: 对话历史记录 [{role: str, content: str}]
+    
+    Returns:
+        格式化的对话历史字符串
+    """
+    if not conversation_history or len(conversation_history) == 0:
+        return "这是你们的第一次对话。"
+    
+    # 只保留最近的5轮对话（10条消息），避免上下文过长
+    recent_history = conversation_history[-10:]
+    
+    context_lines = []
+    for msg in recent_history:
+        role = msg.get('role', 'user')
+        content = msg.get('content', '')
+        
+        if role == 'user':
+            context_lines.append(f"👤 用户: {content}")
+        else:  # assistant
+            # 截断过长的AI回复（超过200字符）
+            if len(content) > 200:
+                content = content[:200] + "..."
+            context_lines.append(f"🤖 AI: {content}")
+    
+    return "\n".join(context_lines)
+
+
 def build_initial_prompt(
     user_request: str,
     selected_columns: List[str],
     data_schema: Dict,
     tables_info: Optional[List[Dict]] = None,
-    selected_chart_types: List[str] = []
+    selected_chart_types: List[str] = [],
+    conversation_history: List[Dict[str, str]] = []
 ) -> str:
     """
     构建初始代码生成 Prompt
@@ -143,6 +176,9 @@ def build_initial_prompt(
 【数据信息】
 以下表格已加载到 Jupyter 环境中：
 {tables_str}
+
+【对话历史】
+{build_conversation_context(conversation_history)}
 
 【用户需求】
 {user_request}
@@ -355,6 +391,9 @@ print(f\"\"\"
 - 总列数：{data_schema.get('total_columns', 'unknown')}
 - 用户选择的字段：
 {columns_str}
+
+【对话历史】
+{build_conversation_context(conversation_history)}
 
 【用户需求】
 {user_request}

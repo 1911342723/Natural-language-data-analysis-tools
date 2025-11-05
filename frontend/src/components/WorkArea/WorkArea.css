@@ -76,4 +76,47 @@
   background: #fff;
 }
 
+/* Tab切换区域 */
+.work-area-tabs {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.work-area-tabs .ant-tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.work-area-tabs .ant-tabs-content-holder {
+  flex: 1;
+  overflow: hidden;
+}
+
+.work-area-tabs .ant-tabs-content {
+  height: 100%;
+}
+
+.work-area-tabs .ant-tabs-tabpane {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Tab标签样式优化 */
+.work-area-tabs .ant-tabs-tab {
+  font-size: 15px;
+  font-weight: 500;
+  padding: 10px 20px;
+}
+
+.work-area-tabs .ant-tabs-tab-active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.work-area-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #fff !important;
+}
+
 

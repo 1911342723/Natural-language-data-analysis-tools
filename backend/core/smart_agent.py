@@ -64,11 +64,13 @@ class SmartAnalysisAgent:
         user_request: str,
         selected_columns: List[str],
         data_schema: Dict,
-        tables_info: Optional[List[Dict]] = None
+        tables_info: Optional[List[Dict]] = None,
+        conversation_history: List[Dict[str, str]] = []
     ):
         self.session_id = session_id
         self.user_request = user_request
         self.selected_columns = selected_columns
+        self.conversation_history = conversation_history or []
         self.data_schema = data_schema
         self.tables_info = tables_info
         
@@ -618,9 +620,16 @@ class SmartAnalysisAgent:
     
     def _build_planning_prompt(self) -> str:
         """构建规划提示词"""
-        # TODO: 实现详细的规划提示词
+        from .prompts import build_conversation_context
+        
+        conversation_context = build_conversation_context(self.conversation_history)
+        
         return f"""你是一位资深数据分析师。用户提出了以下需求：
 
+【对话历史】
+{conversation_context}
+
+【当前需求】
 "{self.user_request}"
 
 可用的数据信息：

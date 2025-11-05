@@ -17,6 +17,12 @@ nbformat>=5.9.0
 openai>=1.50.0
 anthropic>=0.39.0
 
+# 多智能体框架
+crewai>=0.41.0
+crewai-tools>=0.8.0
+langchain>=0.1.0
+langchain-openai>=0.0.5
+
 # 数据库
 sqlalchemy>=2.0.0
 aiosqlite>=0.20.0
@@ -43,6 +49,8 @@ pydantic-settings>=2.6.0
 
 # 文件处理
 aiofiles>=24.0.0
+PyPDF2>=3.0.0  # PDF文件解析
+python-docx>=1.1.0  # Word文档解析
 
 # 安全（可选）
 # python-jose[cryptography]>=3.3.0

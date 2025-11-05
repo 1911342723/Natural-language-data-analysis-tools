@@ -53,6 +53,7 @@ function ChatArea({ showPreview, onTogglePreview }) {
     selectedChartTypes,
     setSelectedChartTypes,
     sidebarCollapsed,
+    conversations,
   } = useAppStore()
 
   const [userInput, setUserInput] = useState('')
@@ -174,6 +175,12 @@ function ChatArea({ showPreview, onTogglePreview }) {
       clearAgentSteps()
       setInputLoading(false)
 
+      // 构建对话历史（仅包含用户问题和AI回复，不包含执行步骤）
+      const conversationHistory = conversations.map(conv => ({
+        role: conv.type === 'user' ? 'user' : 'assistant',
+        content: conv.type === 'user' ? conv.content : (conv.summary || conv.content || ''),
+      }))
+
       // 使用流式 SSE
       const cancelStream = submitAnalysisStream(
         currentSessionId,
@@ -226,7 +233,7 @@ function ChatArea({ showPreview, onTogglePreview }) {
           // 添加完整的分析结果到对话历史（包含步骤和结果）
           addConversation({
             type: 'agent',
-            content: '✅ 分析完成！',
+            content: '分析完成！',
             timestamp: new Date(),
             steps: result.data?.steps || [],  // 保存所有执行步骤
             result: result.data?.result,      // 保存分析结果
@@ -251,7 +258,9 @@ function ChatArea({ showPreview, onTogglePreview }) {
         // 科研模式参数
         chartStyle,
         enableResearchMode,
-        selectedChartTypes
+        selectedChartTypes,
+        // 对话历史
+        conversationHistory
       )
       
       // 保存取消函数

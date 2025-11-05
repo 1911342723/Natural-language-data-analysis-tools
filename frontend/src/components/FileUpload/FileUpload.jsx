@@ -8,16 +8,19 @@ import {
   DeleteOutlined,
   CheckOutlined,
   CloudUploadOutlined,
-  FileTextOutlined
+  FileTextOutlined,
+  TeamOutlined
 } from '@ant-design/icons'
 import { uploadFile, uploadMultipleFiles } from '@/services/api'
 import useAppStore from '@/store/useAppStore'
+import { useNavigate } from 'react-router-dom'
 import './FileUpload.css'
 
 const { Dragger } = Upload
 const { Text, Title } = Typography
 
 function FileUpload() {
+  const navigate = useNavigate()
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadedFiles, setUploadedFiles] = useState([])
@@ -191,6 +194,11 @@ function FileUpload() {
   }
 
   const handleModeChange = (mode) => {
+    if (mode === 'scientist-team') {
+      // 跳转到科学家团队页面
+      navigate('/scientist-team')
+      return
+    }
     setUploadMode(mode)
     setUploadedFiles([])
     setCurrentBatchFiles([])
@@ -227,6 +235,10 @@ function FileUpload() {
           <Radio.Button value="multiple" className="mode-radio-button">
             <AppstoreAddOutlined className="mode-icon" />
             <span>多文件对比</span>
+          </Radio.Button>
+          <Radio.Button value="scientist-team" className="mode-radio-button">
+            <TeamOutlined className="mode-icon" />
+            <span>科学家团队</span>
           </Radio.Button>
         </Radio.Group>
       </div>

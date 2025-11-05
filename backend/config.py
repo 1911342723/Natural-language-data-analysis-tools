@@ -53,6 +53,20 @@ class Settings(BaseSettings):
         alias="AGENT_MODE"
     )
     
+    # MCP 工具配置
+    dashscope_api_key: str = Field(
+        default="sk-3192c3d6a72846b2b15661628641ad25",  # 阿里百炼API Key
+        alias="DASHSCOPE_API_KEY"
+    )
+    dashscope_base_url: str = Field(
+        default="https://dashscope.aliyuncs.com/api/v1",
+        alias="DASHSCOPE_BASE_URL"
+    )
+    serper_api_key: str = Field(
+        default="",  # Serper.dev API Key（可选）
+        alias="SERPER_API_KEY"
+    )
+    
     # 代码执行安全
     enable_code_sandbox: bool = Field(default=False, alias="ENABLE_CODE_SANDBOX")
     docker_image: str = Field(default="python:3.11-slim", alias="DOCKER_IMAGE")

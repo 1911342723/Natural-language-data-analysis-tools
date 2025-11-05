@@ -2,6 +2,7 @@
 科研级图表生成专用 Prompt 模板
 """
 from typing import List, Dict, Any
+from .prompts import build_conversation_context
 
 
 # 科研图表配置字典
@@ -62,7 +63,8 @@ def build_research_chart_prompt(
     data_schema: Dict,
     chart_style: str = "publication",
     enable_statistics: bool = True,
-    selected_chart_types: List[str] = []
+    selected_chart_types: List[str] = [],
+    conversation_history: List[Dict[str, str]] = []
 ) -> str:
     """
     构建科研级图表生成 Prompt
@@ -198,6 +200,9 @@ t(自由度) = t值, p = p值, d = 效应量
 - 总列数：{data_schema.get('total_columns', 'unknown')}
 - 用户选择的字段：
 {columns_str}
+
+【对话历史】
+{build_conversation_context(conversation_history)}
 
 【用户需求】
 {user_request}

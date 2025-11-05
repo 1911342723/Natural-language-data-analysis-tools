@@ -46,6 +46,9 @@ class AIClient:
             AI 响应文本
         """
         try:
+            logger.info(f"🤖 调用AI: provider={self.provider}, model={self.model}")
+            logger.debug(f"📝 消息内容: {messages}")
+            
             if self.provider == "openai":
                 response = self.client.chat.completions.create(
                     model=self.model,
@@ -53,7 +56,9 @@ class AIClient:
                     temperature=temperature,
                     max_tokens=max_tokens,
                 )
-                return response.choices[0].message.content
+                result = response.choices[0].message.content
+                logger.info(f"✅ AI响应成功，长度: {len(result)} 字符")
+                return result
             
             elif self.provider == "anthropic":
                 # Anthropic 的消息格式略有不同

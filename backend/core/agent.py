@@ -67,7 +67,8 @@ class AnalysisAgent:
         data_schema: Dict,
         chart_style: str = "publication",  # 新增：图表样式
         enable_research_mode: bool = False,  # 新增：是否启用科研模式
-        selected_chart_types: List[str] = []  # 新增：用户选择的图表类型列表
+        selected_chart_types: List[str] = [],  # 新增：用户选择的图表类型列表
+        conversation_history: List[Dict[str, str]] = []  # 新增：对话历史记录
     ):
         self.session_id = session_id
         self.user_request = user_request
@@ -76,6 +77,7 @@ class AnalysisAgent:
         self.chart_style = chart_style
         self.enable_research_mode = enable_research_mode
         self.selected_chart_types = selected_chart_types or []
+        self.conversation_history = conversation_history or []
         
         self.steps: List[AgentStep] = []
         self.status = "running"  # running | completed | failed
@@ -270,7 +272,8 @@ class AnalysisAgent:
                     data_schema=self.data_schema,
                     chart_style=self.chart_style,
                     enable_statistics=True,
-                    selected_chart_types=self.selected_chart_types
+                    selected_chart_types=self.selected_chart_types,
+                    conversation_history=self.conversation_history
                 )
             elif is_multi:
                 # 多表格模式：传递 tables_info
@@ -278,7 +281,8 @@ class AnalysisAgent:
                     user_request=self.user_request,
                     selected_columns=[],  # 多表格模式不需要选择字段
                     data_schema={},
-                    tables_info=self.data_schema.get('tables', [])
+                    tables_info=self.data_schema.get('tables', []),
+                    conversation_history=self.conversation_history
                 )
             else:
                 # 单表格模式：原有逻辑
@@ -286,7 +290,8 @@ class AnalysisAgent:
                     user_request=self.user_request,
                     selected_columns=self.selected_columns,
                     data_schema=self.data_schema,
-                    selected_chart_types=self.selected_chart_types
+                    selected_chart_types=self.selected_chart_types,
+                    conversation_history=self.conversation_history
                 )
             
             # 调用 AI（流式）

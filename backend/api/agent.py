@@ -32,6 +32,7 @@ class AnalyzeRequest(BaseModel):
     chart_style: str = "publication"  # 新增：图表样式 (publication/presentation/web)
     enable_research_mode: bool = False  # 新增：是否启用科研模式
     selected_chart_types: List[str] = []  # 新增：用户选择的图表类型列表
+    conversation_history: List[Dict[str, str]] = []  # 新增：对话历史记录 [{role: str, content: str}]
 
 
 async def run_agent_task(
@@ -43,7 +44,8 @@ async def run_agent_task(
     agent_mode: str = "smart",
     chart_style: str = "publication",
     enable_research_mode: bool = False,
-    selected_chart_types: List[str] = []
+    selected_chart_types: List[str] = [],
+    conversation_history: List[Dict[str, str]] = []
 ):
     """后台运行 Agent 任务"""
     try:
@@ -56,7 +58,8 @@ async def run_agent_task(
                 session_id=session_id,
                 user_request=user_request,
                 selected_columns=selected_columns,
-                data_schema=data_schema
+                data_schema=data_schema,
+                conversation_history=conversation_history  # 传递对话历史
             )
         else:
             agent = AnalysisAgent(
@@ -66,7 +69,8 @@ async def run_agent_task(
                 data_schema=data_schema,
                 chart_style=chart_style,  # 传递图表样式
                 enable_research_mode=enable_research_mode,  # 传递科研模式标志
-                selected_chart_types=selected_chart_types  # 传递选择的图表类型
+                selected_chart_types=selected_chart_types,  # 传递选择的图表类型
+                conversation_history=conversation_history  # 传递对话历史
             )
         
         # 更新任务状态
@@ -373,7 +377,8 @@ async def analyze_stream(request: AnalyzeRequest):
                         user_request=request.user_request,
                         selected_columns=request.selected_columns,
                         data_schema=data_schema,
-                        tables_info=data_schema.get('tables') if data_schema.get('is_multi') else None
+                        tables_info=data_schema.get('tables') if data_schema.get('is_multi') else None,
+                        conversation_history=request.conversation_history  # 传递对话历史
                     )
                 else:
                     agent = AnalysisAgent(
@@ -383,7 +388,8 @@ async def analyze_stream(request: AnalyzeRequest):
                         data_schema=data_schema,
                         chart_style=request.chart_style,  # 传递图表样式
                         enable_research_mode=request.enable_research_mode,  # 传递科研模式标志
-                        selected_chart_types=request.selected_chart_types  # 传递选择的图表类型
+                        selected_chart_types=request.selected_chart_types,  # 传递选择的图表类型
+                        conversation_history=request.conversation_history  # 传递对话历史
                     )
                 
                 # 监听 Agent 的步骤变化

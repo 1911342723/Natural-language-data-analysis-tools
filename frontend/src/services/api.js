@@ -127,6 +127,7 @@ export const submitAnalysisRequest = (sessionId, userRequest, selectedColumns) =
  * @param {function} onStep - 步骤回调 (step) => void
  * @param {function} onComplete - 完成回调 (result) => void
  * @param {function} onError - 错误回调 (error) => void
+ * @param {Array} conversationHistory - 对话历史记录
  * @returns {function} 返回一个取消函数
  */
 export const submitAnalysisStream = (
@@ -139,7 +140,8 @@ export const submitAnalysisStream = (
   onError,
   chartStyle = 'publication',
   enableResearchMode = false,
-  selectedChartTypes = []
+  selectedChartTypes = [],
+  conversationHistory = []
 ) => {
   // 在开发环境，通过代理访问，直接使用相对路径
   const url = '/api/agent/analyze-stream'
@@ -161,6 +163,7 @@ export const submitAnalysisStream = (
           chart_style: chartStyle,
           enable_research_mode: enableResearchMode,
           selected_chart_types: selectedChartTypes,
+          conversation_history: conversationHistory,
         }),
         signal: controller.signal,
       })
@@ -195,17 +198,14 @@ export const submitAnalysisStream = (
               
               switch (data.event) {
                 case 'start':
-                  console.log('🚀 流式任务开始:', data.task_id)
                   break
                 case 'step':
                   if (onStep) onStep(data.data, data.step_index)
                   break
                 case 'complete':
-                  // console.log('✅ 流式任务完成:', data.data)
                   if (onComplete) onComplete(data.data)
                   break
                 case 'error':
-                  console.error('❌ 流式任务错误:', data.message)
                   if (onError) onError(new Error(data.message))
                   break
               }
