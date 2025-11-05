@@ -202,6 +202,10 @@ class JupyterSession:
                 msg_type = msg['header']['msg_type']
                 content = msg['content']
                 
+                # 记录所有非 status/execute_input 消息
+                if msg_type not in ['status', 'execute_input']:
+                    print(f"🔍 [消息类型] {msg_type}")
+                
                 # 标准输出
                 if msg_type == 'stream':
                     if content['name'] == 'stdout':
@@ -220,6 +224,7 @@ class JupyterSession:
                         'type': 'execute_result',
                         'data': content['data']
                     })
+                    print(f"📊 [收到execute_result] execution_count={content['execution_count']}")
                 
                 # 显示数据
                 elif msg_type == 'display_data':
@@ -227,6 +232,7 @@ class JupyterSession:
                         'type': 'display_data',
                         'data': content['data']
                     })
+                    print(f"📊 [收到display_data] data keys={list(content.get('data', {}).keys())}")
                 
                 # 错误
                 elif msg_type == 'error':
@@ -407,7 +413,7 @@ class JupyterManager:
         await session.start()
         
         # 初始化环境：加载数据
-        init_code = f"""
+        init_code = """
 import sys
 import pandas as pd
 import numpy as np
@@ -428,7 +434,7 @@ try:
     import sklearn
     print("✅ 科研库导入成功: scipy, sklearn", file=sys.stderr)
 except ImportError as e:
-    print(f"⚠️ 科研库导入失败: {{e}}", file=sys.stderr)
+    print(f"⚠️ 科研库导入失败: {e}", file=sys.stderr)
     print("提示：请运行 pip install scipy scikit-learn", file=sys.stderr)
 
 # 配置中文显示
@@ -436,7 +442,7 @@ plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
 # 加载数据
-{{data_load_code}}
+{data_load_code}
 
 # 初始化完成（不输出任何内容到 stdout）
 None
@@ -477,7 +483,7 @@ df = pd.read_json(_data_json, orient='records')
             print(f"\n🔧 [Session {session_id[:8]}] 开始执行初始化代码... (数据大小: {data_size_mb:.2f} MB)")
         
         # 替换模板中的数据加载代码
-        init_code = init_code.replace('{{data_load_code}}', data_load_code)
+        init_code = init_code.replace('{data_load_code}', data_load_code)
         
         result = await session.execute_code(init_code)  # 使用默认的智能执行（基于 Kernel 状态，不依赖固定超时）
         

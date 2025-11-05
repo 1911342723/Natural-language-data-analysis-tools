@@ -140,8 +140,8 @@ async def create_multi_session(request: CreateMultiSessionRequest):
     {
         "group_id": "xxx",
         "tables": [
-            {"file_id": "file1", "sheet_name": "Sheet1", "alias": "df1"},
-            {"file_id": "file2", "sheet_name": "Sheet1", "alias": "df2"}
+            {"file_id": "file1", "sheet_name": "Sheet1", "alias": "df1", "selected_columns": []},
+            {"file_id": "file2", "sheet_name": "Sheet1", "alias": "df2", "selected_columns": []}
         ],
         "selected_columns": []
     }
@@ -157,6 +157,12 @@ async def create_multi_session(request: CreateMultiSessionRequest):
     }
     """
     try:
+        logger.info(f"🔵 收到创建多文件 Session 请求")
+        logger.info(f"  group_id: {request.group_id}")
+        logger.info(f"  tables 数量: {len(request.tables)}")
+        for i, table in enumerate(request.tables):
+            logger.info(f"  table[{i}]: file_id={table.file_id}, sheet={table.sheet_name}, alias={table.alias}, selected_columns={table.selected_columns}")
+        
         logger.info(f"创建多文件 Session: group_id={request.group_id}, tables={len(request.tables)}")
         
         # 1. 从缓存获取文件组信息
